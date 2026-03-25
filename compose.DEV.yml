@@ -1,0 +1,124 @@
+## docker compose -f compose.DEV.yml up --build
+
+## docker compose exec pfg1-back php artisan migrate:fresh --seed
+
+## docker exec pfg1-back php artisan db:seed
+services:
+  # Frontend NUXT
+  tr3-cf-front:
+    container_name: tr3-cf-front
+    image: node:24-bullseye
+    command: sh -c "cp .env.DEV .env && npm install && npm run dev"
+    working_dir: /usr/src/app
+    volumes:
+      - ./front:/usr/src/app
+    ports:
+      - "3000:3000"
+    networks:
+      - general
+
+  # Backend Laravel
+  tr3-cf-laravel-api:
+    container_name: tr3-cf-laravel-api
+    build:
+      context: .
+      dockerfile: ./back/laravel-api/dev.Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      - ./back/laravel-api:/app
+    depends_on:
+      - tr3-cf-postgres
+    # entrypoint: ["/bin/sh", "-c"]
+    command: sh -c "cp /app/.env.DEV /app/.env && php artisan key:generate && php artisan storage:link || true && php artisan migrate && php artisan serve --host=0.0.0.0 --port=8000"
+    networks:
+      - general
+
+  # Backend node nodejs
+  tr3-cf-node:
+    container_name: tr3-cf-node
+    build:
+      dockerfile: ./back/node/dev.Dockerfile
+      context: .
+    command: sh -c "cp .env.DEV .env && npm install && nodemon -L index.js"
+    volumes:
+      - ./back/node:/usr/src/app
+    ports:
+      - "3001:3001"
+    working_dir: /usr/src/app
+    networks:
+      - general
+
+  # Backend node dbinsert
+  tr3-cf-dbinsert:
+    container_name: tr3-cf-dbinsert
+    build:
+      dockerfile: ./back/dbinsert/dev.Dockerfile
+      context: .
+    command: sh -c "cp .env.DEV .env && npm install && nodemon -L index.js"
+    volumes:
+      - ./back/node:/usr/src/app
+    ports:
+      - "3002:3002"
+    working_dir: /usr/src/app
+    networks:
+      - general
+  tr3-cf-postgres:
+    image: postgres:16
+    container_name: tr3-cf-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: tr3-postgres
+    volumes:
+      - postgres-bd:/var/lib/postgresql/data:rw
+    ports:
+      - 5432:5432
+    networks:
+      - general
+
+  tr3-cf-pgadmin:
+    image: dpage/pgadmin4
+    container_name: tr3-cf-pgadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - tr3-cf-postgres
+    networks:
+      - general
+
+  tr3-cf-redis:
+    image: redis:7-alpine
+    container_name: tr3-cf-redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass root
+    networks:
+      - general
+
+  tr3-cf-rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    container_name: tr3-cf-rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - general
+volumes:
+  postgres-bd:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  general:
+    driver: bridge
+    name: general

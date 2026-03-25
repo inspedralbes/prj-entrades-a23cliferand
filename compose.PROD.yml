@@ -1,0 +1,143 @@
+# Generar certificats
+# docker compose -f compose.PROD.yml run --rm --entrypoint prj-final-r-e-n-f-e-certbot-1 certbot certonly --webroot --webroot-path /var/www/certbot -d renfe.daw.inspedralbes.cat --email a23cliferadn@inspedralbes.cat --agree-tos --no-eff-email
+services:
+  tr3-cf-nginx:
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      tr3-cf-laravel-api:
+        condition: service_started
+    networks:
+      - general
+    restart: unless-stopped
+
+  tr3-cf-certbot:
+    image: certbot/certbot
+    container_name: tr3-cf-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # Loop para comprobar renovación de certificados cada 12h
+    entrypoint: "/bin/sh -c 'trap exit TERM; certbot certonly --webroot --webroot-path /var/www/certbot -d renfe.daw.inspedralbes.cat --email a23cliferadn@inspedralbes.cat --agree-tos --no-eff-email --expand 2>/dev/null || true; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+  # Backend Laravel
+  tr3-cf-laravel-api:
+    container_name: tr3-cf-laravel-api
+    build:
+      context: .
+      dockerfile: ./back/laravel-api/prod.Dockerfile
+    ports:
+      - 9000:9000
+    # volumes:
+    #   - ./back/laravel-api:/app
+    depends_on:
+      - tr3-cf-postgres
+    command: sh -c "php artisan key:generate && php artisan storage:link || true && php-fpm"
+    networks:
+      - general
+
+  # Backend node nodejs
+  tr3-cf-node:
+    container_name: tr3-cf-node
+    image: node:22-bookworm-slim
+    command: sh -c "cp .env.PROD .env && npm install && node index.js"
+    volumes:
+      - ./back/node:/usr/src/app
+    ports:
+      - "3001:3001"
+    working_dir: /usr/src/app
+    networks:
+      - general
+
+  # Backend node dbinsert
+  tr3-cf-dbinsert:
+    container_name: tr3-cf-dbinsert
+    build:
+      dockerfile: ./back/dbinsert/dev.Dockerfile
+      context: .
+    command: sh -c "cp .env.PROD .env && npm install && node index.js"
+    volumes:
+      - ./back/node:/usr/src/app
+    ports:
+      - "3002:3002"
+    working_dir: /usr/src/app
+    networks:
+      - general
+
+  tr3-cf-postgres:
+    image: postgres:16
+    container_name: tr3-cf-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: tr3-postgres
+    volumes:
+      - postgres-bd:/var/lib/postgresql/data:rw
+    # ports:
+    #   - 5432:5432
+    networks:
+      - general
+
+  tr3-cf-portainer:
+    container_name: tr3-cf-portainer
+    image: portainer/portainer-ce:lts
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - 9443:9443
+  tr3-cf-pgadmin:
+    image: dpage/pgadmin4
+    container_name: tr3-cf-pgadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      - tr3-cf-postgres
+    networks:
+      - general
+
+  tr3-cf-redis:
+    image: redis:7-alpine
+    container_name: tr3-cf-redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    networks:
+      - general
+
+  tr3-cf-rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    container_name: tr3-cf-rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - general
+
+volumes:
+  postgres-bd:
+  redis_data:
+  portainer_data:
+
+networks:
+  general:
+    driver: bridge
+    name: general
