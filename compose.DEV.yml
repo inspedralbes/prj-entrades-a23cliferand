@@ -1,8 +1,8 @@
 ## docker compose -f compose.DEV.yml up --build
 
-## docker compose exec pfg1-back php artisan migrate:fresh --seed
+## docker compose exec tr3-cf-laravel-api php artisan migrate:fresh --seed
 
-## docker exec pfg1-back php artisan db:seed
+## docker compose exec tr3-cf-laravel-api php artisan db:seed
 services:
   # Frontend NUXT
   tr3-cf-front:
