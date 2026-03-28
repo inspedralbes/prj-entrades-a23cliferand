@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             TipusClientSeeder::class,
             TarifaSeeder::class,
             SalaSeeder::class,
+            SeientDissenySeeder::class,
             PreuTarifaSeeder::class,
             UsuariSeeder::class,
             SessioSeeder::class,

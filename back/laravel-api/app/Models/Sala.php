@@ -12,10 +12,22 @@ class Sala extends Model
     protected $fillable = [
         'nom',
         'capacitat',
+        'files_max',
+        'columnes_max',
     ];
 
     public function sessions(): HasMany
     {
         return $this->hasMany(Sessio::class, 'sala_id');
+    }
+
+    public function seientsDisseny(): HasMany
+    {
+        return $this->hasMany(SeientDisseny::class, 'sala_id');
+    }
+
+    public function seients(): HasMany
+    {
+        return $this->hasMany(SeientDisseny::class, 'sala_id')->where('es_seient', true);
     }
 }
