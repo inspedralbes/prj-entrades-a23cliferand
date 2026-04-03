@@ -12,6 +12,7 @@ class Reserva extends Model
 
     protected $fillable = [
         'usuari_id',
+        'guest_id',
         'sessio_id',
         'preu_total',
         'estat',

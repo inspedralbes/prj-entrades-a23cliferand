@@ -9,7 +9,8 @@ return new class extends Migration {
     {
         Schema::create('reserva', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('usuari_id')->constrained('usuaris')->onDelete('cascade');
+            $table->foreignId('usuari_id')->nullable()->constrained('usuaris')->onDelete('cascade');
+            $table->string('guest_id')->nullable();
             $table->foreignId('sessio_id')->constrained('sessions_cine')->onDelete('cascade');
             $table->decimal('preu_total', 10, 2);
             $table->enum('estat', ['pendent', 'confirmada', 'caducada'])->default('pendent');

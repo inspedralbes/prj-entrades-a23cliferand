@@ -1,5 +1,5 @@
 <template>
-  <div class="sessio-card">
+  <NuxtLink :to="`/compra/${sessio.id}`" class="sessio-card">
     <div class="sessio-card_hora">
       <span class="hora_data">{{ sessio.diaSemana }} {{ sessio.numDia }} {{ sessio.mesSessio }}</span>
       <span class="hora_time">{{ sessio.hora }}</span>
@@ -31,7 +31,7 @@
       :class="{ 'sessio-card_btn--disabled': sessio.esPassat }">
       {{ sessio.esPassat ? 'No disponible' : 'Comprar' }}
     </button>
-  </div>
+  </NuxtLink>
 </template>
 
 <script setup>

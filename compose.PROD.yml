@@ -43,6 +43,8 @@ services:
     command: sh -c "php artisan key:generate && php artisan storage:link || true && php-fpm"
     networks:
       - general
+    environment:
+      CRON_SECRET: ${CRON_TOKEN}
 
   # Backend node nodejs
   tr3-cf-node:
@@ -53,21 +55,6 @@ services:
       - ./back/node:/usr/src/app
     ports:
       - "3001:3001"
-    working_dir: /usr/src/app
-    networks:
-      - general
-
-  # Backend node dbinsert
-  tr3-cf-dbinsert:
-    container_name: tr3-cf-dbinsert
-    build:
-      dockerfile: ./back/dbinsert/dev.Dockerfile
-      context: .
-    command: sh -c "cp .env.PROD .env && npm install && node index.js"
-    volumes:
-      - ./back/node:/usr/src/app
-    ports:
-      - "3002:3002"
     working_dir: /usr/src/app
     networks:
       - general
@@ -118,17 +105,6 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
-    networks:
-      - general
-
-  tr3-cf-rabbitmq:
-    image: rabbitmq:4.0-management-alpine
-    container_name: tr3-cf-rabbitmq
-    ports:
-      - 5672:5672
-      - 15672:15672
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - general
 

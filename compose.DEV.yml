@@ -49,20 +49,6 @@ services:
     networks:
       - general
 
-  # Backend node dbinsert
-  tr3-cf-dbinsert:
-    container_name: tr3-cf-dbinsert
-    build:
-      dockerfile: ./back/dbinsert/dev.Dockerfile
-      context: .
-    command: sh -c "cp .env.DEV .env && npm install && nodemon -L index.js"
-    volumes:
-      - ./back/node:/usr/src/app
-    ports:
-      - "3002:3002"
-    working_dir: /usr/src/app
-    networks:
-      - general
   tr3-cf-postgres:
     image: postgres:16
     container_name: tr3-cf-postgres
@@ -114,20 +100,9 @@ services:
     networks:
       - general
 
-  tr3-cf-rabbitmq:
-    image: rabbitmq:4.0-management-alpine
-    container_name: tr3-cf-rabbitmq
-    ports:
-      - 5672:5672
-      - 15672:15672
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - general
 volumes:
   postgres-bd:
   redis_data:
-  rabbitmq_data:
 
 networks:
   general:

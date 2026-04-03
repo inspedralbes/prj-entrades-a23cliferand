@@ -11,6 +11,12 @@
   --color-text: #f0f0f5;
   --color-muted: #8a8a9a;
 
+  /* Colors dels seients */
+  --color-disponible: #4CAF50;
+  --color-reservat: #f5c842;
+  --color-venut: #999999;
+  --color-seleccionat: #e8272e;
+
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 20px;
