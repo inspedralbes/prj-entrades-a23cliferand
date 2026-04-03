@@ -12,7 +12,8 @@ class SeientSessioSeeder extends Seeder
         $files = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         $maxSeientsPerFila = 12;
 
-        $sessions = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        // Obtenir totes les sessions de la base de dades
+        $sessions = \App\Models\Sessio::pluck('id');
 
         foreach ($sessions as $sessioId) {
             foreach ($files as $fila) {

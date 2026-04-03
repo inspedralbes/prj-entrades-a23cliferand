@@ -5,18 +5,117 @@ namespace App\Services;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 
-class PeliculaSyncService
+class PeliculaService
 {
-    /**
-     * Sincronitza una pel·lícula des de la IMDb API a Redis per la seva ID.
-     * Retorna true si ha anat bé, false si hi ha hagut un error.
-     */
+    // --- LECTURA (Anterior RedisMovieService) ---
+
+    public function getAllPelicules(): array
+    {
+        return $this->getAllFromRedis();
+    }
+
+    public function getAllFromRedis(): array
+    {
+        $movies = [];
+
+        // Obtener todas las claves que comienzan con 'pelicula:'
+        $keys = Redis::keys('pelicula:*');
+        $prefix = config('database.redis.options.prefix');
+
+        foreach ($keys as $key) {
+            $actualKey = $key;
+            if ($prefix && str_starts_with($key, $prefix)) {
+                $actualKey = substr($key, strlen($prefix));
+            }
+
+            $data = Redis::hgetall($actualKey);
+            
+            if ($data && is_array($data) && count($data) > 0) {
+                if (array_keys($data) !== range(0, count($data) - 1)) {
+                    $movie = $data;
+                } else {
+                    $movie = [];
+                    for ($i = 0; $i < count($data); $i += 2) {
+                        if (isset($data[$i + 1])) {
+                            $movie[$data[$i]] = $data[$i + 1];
+                        }
+                    }
+                }
+                
+                if (!empty($movie)) {
+                    $movies[] = $movie;
+                }
+            }
+        }
+
+        return $movies;
+    }
+
+    public function getByIdFromRedis(string $imdbId): ?array
+    {
+        $key = "pelicula:{$imdbId}"; // Los IDs se guardan con el prefijo pelicula: en Redis
+        $data = Redis::hgetall($key);
+
+        if (!$data || !is_array($data) || count($data) === 0) {
+            return null;
+        }
+
+        if (array_keys($data) !== range(0, count($data) - 1)) {
+            return $data;
+        }
+
+        // Convertir array plano a hash
+        $movie = [];
+        for ($i = 0; $i < count($data); $i += 2) {
+            if (isset($data[$i + 1])) {
+                $movie[$data[$i]] = $data[$i + 1];
+            }
+        }
+
+        return !empty($movie) ? $movie : null;
+    }
+
+    public function getPelicula(string $imdbId): ?array
+    {
+        $redisData = $this->getByIdFromRedis($imdbId);
+
+        if ($redisData) {
+            return $redisData;
+        }
+
+        return $this->fetchFromApi($imdbId);
+    }
+
+    public function fetchFromApi(string $imdbId): ?array
+    {
+        $response = Http::get("https://imdbapi.dev/api/v1/title/{$imdbId}");
+
+        if (!$response->successful()) {
+            return null;
+        }
+
+        $data = $response->json();
+
+        return [
+            'imdb_id' => $imdbId,
+            'titol' => $data['title'] ?? '',
+            'tipus' => $data['type'] ?? '',
+            'any' => $data['year'] ?? '',
+            'rating' => $data['rating'] ?? '',
+            'duracio' => $data['runtime'] ?? '',
+            'generes' => implode(',', $data['genres'] ?? []),
+            'sinopsi' => $data['synopsis'] ?? '',
+            'cartell' => $data['poster'] ?? '',
+        ];
+    }
+
+    // --- ESCRITURA / SINCRO (Anterior PeliculaSyncService) ---
+
     public function syncMovie(string $imdbId): bool
     {
         $response = Http::timeout(20)->retry(2, 300)->get("https://api.imdbapi.dev/titles/{$imdbId}");
 
         if (!$response->successful()) {
-            // No podem escriure al command directament, podem llançar una excepció o retornar false
             return false;
         }
 
@@ -90,8 +189,8 @@ class PeliculaSyncService
                 'plot.plotText.plainText',
                 'description',
             ], '')),
-            'cartell'      => $posterUrl,                 // URL original
-            'cartell_b64'  => $posterB64 ?? '',           // imagen en base64 (DB Redis)
+            'cartell'      => $posterUrl,
+            'cartell_b64'  => $posterB64 ?? '',
             'cartell_mime' => $posterMime ?? '',
             'imatges'      => $this->asCsv($this->extractImageUrls($this->pick($data, [
                 'images',
@@ -102,7 +201,6 @@ class PeliculaSyncService
 
         $key = "pelicula:{$imdbId}";
         
-        // Provem de recuperar la data en què es va crear inicialment a Redis
         $dataCreacio = Redis::hget($key, 'data_creacio');
         
         $payload['data_sync'] = now()->toDateTimeString();
@@ -234,7 +332,7 @@ class PeliculaSyncService
         }
 
         if (strlen($body) > 5 * 1024 * 1024) {
-            return [null, null]; // Ignorem advertències per consola en el servei
+            return [null, null]; 
         }
 
         $mime = $img->header('Content-Type') ?: 'application/octet-stream';
