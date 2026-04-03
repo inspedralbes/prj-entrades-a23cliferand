@@ -21,11 +21,6 @@ class Sessio extends Model
         'data_hora' => 'datetime',
     ];
 
-    public function pellicula(): BelongsTo
-    {
-        return $this->belongsTo(Pellicula::class, 'pellicula_id');
-    }
-
     public function sala(): BelongsTo
     {
         return $this->belongsTo(Sala::class, 'sala_id');
