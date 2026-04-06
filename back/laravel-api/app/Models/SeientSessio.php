@@ -16,6 +16,8 @@ class SeientSessio extends Model
         'numero',
         'estat',
         'reservat_at',
+        'usuari_id',
+        'guest_id',
     ];
 
     protected $casts = [

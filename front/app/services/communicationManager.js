@@ -171,6 +171,7 @@ export function getReservesAll() { return request("/reserves"); }
 export function getReservesMeves() { return request("/reserves?meves=1"); }
 export function getReservaById(id) { return request(`/reserves/${id}`); }
 export function createReserva(data) { return request("/reserves", { method: "POST", body: JSON.stringify(data) }); }
+export function confirmarReservaFinal(data) { return request("/reserves/confirmar", { method: "POST", body: JSON.stringify(data) }); }
 export function deleteReserva(id) { return request(`/reserves/${id}`, { method: "DELETE" }); }
 
 // Obté els seients disponibles per a una sessió
@@ -178,25 +179,24 @@ export async function getSeientsSessio(sessioId) {
   return request(`/sessions/${sessioId}/seients`);
 }
 
-// Crea una reserva d'un sol seient (des del click)
+// Bloqueja temporalment un seient
 export async function crearReservaSeient(sessioId, seientId, usuariId) {
   return request("/reserves/seient_reservar", {
     method: "POST",
     body: JSON.stringify({
       usuari_id: usuariId,
       sessio_id: sessioId,
-      seient_ids: [seientId],
-      tipus_client_id: 1
+      seient_ids: [seientId]
     })
   });
 }
 
-// Desocupa (allibera) seients d'una reserva
-export async function desocuparSeients(reservaId, seientIds) {
+// Desocupa (allibera) bloquejos temporals
+export async function desocuparSeients(sessioId, seientIds) {
   return request("/reserves/seient_desocupar", {
     method: "POST",
     body: JSON.stringify({
-      reserva_id: reservaId,
+      sessio_id: sessioId,
       seient_ids: seientIds
     })
   });
