@@ -165,6 +165,40 @@ ul {
   opacity: 0.6;
 }
 
+.btn-secondary {
+  background: var(--color-surface2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-muted);
+}
+
+/* Forms */
+.form-control {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color var(--transition);
+}
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
 /* Missatge d'error */
 .api-error {
   display: flex;
@@ -187,3 +221,80 @@ ul {
 .api-error p { font-weight: 600; }
 .api-error small { color: var(--color-muted); font-size: 0.8rem; }
 .api-error code { background: var(--color-surface2); padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; }
+
+/* Loading & Spinner */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid var(--color-border);
+  border-top: 4px solid var(--color-accent);
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--color-muted);
+  font-size: 1.1rem;
+}
+
+.aspect-poster {
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+
+/* Cards & Containers */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+}
+
+/* Seat Statuses */
+.seient-status {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.seient-status--lliure {
+  background-color: var(--color-disponible);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+}
+
+.seient-status--reservat {
+  background: linear-gradient(135deg, var(--color-reservat) 0%, #e6b600 100%);
+  box-shadow: 0 2px 8px rgba(245, 200, 66, 0.4);
+}
+
+.seient-status--venut {
+  background: linear-gradient(135deg, var(--color-venut) 0%, #666 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.seient-status--seleccionat {
+  background: linear-gradient(135deg, var(--color-seleccionat) 0%, #ff3d3d 100%);
+  box-shadow: 0 2px 12px rgba(232, 39, 46, 0.5);
+  border: 2px solid white;
+}

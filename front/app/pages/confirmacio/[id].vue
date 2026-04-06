@@ -1,7 +1,8 @@
 <template>
     <div class="confirmacio-container">
         <div class="confirmacio-content">
-            <div v-if="cargant" class="cargant">
+            <div v-if="cargant" class="loading-container">
+                <div class="spinner" />
                 <p>Carregant informació de la comanda...</p>
             </div>
 
@@ -150,13 +151,13 @@ function formatPreu(preu) {
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-background) 100%);
+    background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%);
 }
 
 .confirmacio-content {
     background: var(--color-surface);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-card);
     padding: 3rem 2rem;
     max-width: 600px;
     width: 100%;
@@ -211,13 +212,13 @@ function formatPreu(preu) {
 
 .missatge-secundari {
     font-size: 0.95rem;
-    color: var(--color-text-secondary);
+    color: var(--color-muted);
 }
 
 .confirmacio-pelicula {
     display: flex;
     gap: 1.5rem;
-    background: var(--color-background);
+    background: var(--color-bg);
     border-radius: var(--radius-md);
     padding: 1.5rem;
     margin-bottom: 2rem;
@@ -246,12 +247,12 @@ function formatPreu(preu) {
 .pelicula-info p {
     margin: 0;
     font-size: 0.9rem;
-    color: var(--color-text-secondary);
+    color: var(--color-muted);
     line-height: 1.6;
 }
 
 .confirmacio-detalls {
-    background: var(--color-background);
+    background: var(--color-bg);
     border-radius: var(--radius-md);
     padding: 1.5rem;
     margin-bottom: 2rem;
@@ -271,7 +272,7 @@ function formatPreu(preu) {
 
 .detall-label {
     font-weight: 600;
-    color: var(--color-text-secondary);
+    color: var(--color-muted);
 }
 
 .detall-valor {
@@ -283,42 +284,14 @@ function formatPreu(preu) {
     margin-bottom: 2rem;
 }
 
-.btn {
-    display: inline-block;
-    padding: 1rem 2rem;
-    border-radius: var(--radius-md);
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    color: white;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-}
-
 .confirmacio-avise {
-    background: var(--color-warning-light, rgba(255, 152, 0, 0.1));
-    border-left: 4px solid var(--color-warning, #FF9800);
+    background: rgba(245, 200, 66, 0.1);
+    border-left: 4px solid var(--color-gold);
     padding: 1rem;
     border-radius: var(--radius-sm);
     text-align: center;
     font-size: 0.9rem;
-    color: var(--color-text-secondary);
-}
-
-.cargant {
-    padding: 2rem;
-    text-align: center;
-    color: var(--color-text-secondary);
+    color: var(--color-muted);
 }
 
 .error-message {

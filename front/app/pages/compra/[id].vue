@@ -14,7 +14,7 @@
 
         <!-- Contingut principal -->
         <div class="container compra-main">
-            <div v-if="carregant" class="carregant">
+            <div v-if="carregant" class="loading-container">
                 <div class="spinner" />
                 <p>Carregant seients...</p>
             </div>
@@ -262,21 +262,6 @@ function formatPreu(preu) {
     opacity: 0.8;
 }
 
-.carregant {
-    text-align: center;
-    padding: 4rem 2rem;
-}
-
-.spinner {
-    width: 3rem;
-    height: 3rem;
-    border: 4px solid var(--color-border);
-    border-top: 4px solid var(--color-accent);
-    border-radius: 50%;
-    margin: 0 auto 1rem;
-    animation: spin 1s linear infinite;
-}
-
 .avis-temporal {
     background-color: rgba(245, 200, 66, 0.1);
     border: 1px solid var(--color-reservat);
@@ -375,16 +360,6 @@ function formatPreu(preu) {
 .resum-breu .separador {
     color: var(--color-border);
     margin: 0 0.5rem;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
 }
 
 @media (max-width: 640px) {

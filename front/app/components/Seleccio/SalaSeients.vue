@@ -1,5 +1,5 @@
 <template>
-    <div class="seients-contenidor">
+    <div class="seients-contenidor card">
         <div class="pantalla">PANTALLA</div>
 
         <div class="sala-seients">
@@ -189,12 +189,7 @@ function desseleccionarSeient(seient) {
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    padding: 2rem;
-    background: var(--color-surface);
-    border-radius: var(--radius-md);
     color: var(--color-text);
-    border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-card);
 }
 
 .pantalla {

@@ -27,7 +27,7 @@
 
       <!-- Contingut -->
       <div v-else-if="pelicula" class="container detall_main">
-        <img class="detall_poster" :src="pelicula.poster" :alt="`Pòster de ${pelicula.titol}`" />
+        <img class="detall_poster aspect-poster" :src="pelicula.poster" :alt="`Pòster de ${pelicula.titol}`" />
 
         <Metadades :pelicula="pelicula" />
       </div>
@@ -46,7 +46,7 @@
         <div v-for="i in 3" :key="i" class="transicio transicio_session-card" />
       </div>
 
-      <div v-else-if="sessions.length === 0" class="sessions-empty">
+      <div v-else-if="sessions.length === 0" class="empty-state">
         <p>No hi ha sessions programades per a aquesta pel·lícula.</p>
       </div>
 
@@ -236,13 +236,6 @@ const sessionsDiaActiu = computed(() =>
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.sessions-empty {
-  text-align: center;
-  padding: 60px 0;
-  color: var(--color-muted);
-  font-size: 1.05rem;
 }
 
 .sessions-empty_day {

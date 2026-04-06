@@ -2,7 +2,7 @@
   <NuxtLink :to="`/pelicula/${pelicula.id}`" class="tarjeta">
     <!-- Poster -->
     <div class="tarjeta_poster-wrap">
-      <img class="tarjeta_poster" :src="pelicula.poster" :alt="`Pòster de ${pelicula.titol}`" loading="lazy" />
+      <img class="tarjeta_poster aspect-poster" :src="pelicula.poster" :alt="`Pòster de ${pelicula.titol}`" loading="lazy" />
       <!-- Overlay hover -->
       <div class="tarjeta_overlay">
         <span class="btn btn-primary tarjeta_btn-sessions">Veure detalls</span>
@@ -59,7 +59,6 @@ defineProps({
 /* Poster */
 .tarjeta_poster-wrap {
   position: relative;
-  aspect-ratio: 2 / 3;
   overflow: hidden;
 }
 

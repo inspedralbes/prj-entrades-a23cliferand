@@ -36,7 +36,7 @@
         <!-- Grid de pel·lícules -->
         <div v-else class="cartelera_grid">
           <TarjetaPelicula v-for="pelicula in peliculesFiltrades" :key="pelicula.id" :pelicula="pelicula" />
-          <p v-if="peliculesFiltrades.length === 0 && !carregant" class="cartelera_empty">
+          <p v-if="peliculesFiltrades.length === 0 && !carregant" class="empty-state">
             No hi ha pel·lícules per al gènere seleccionat.
           </p>
         </div>
@@ -140,14 +140,6 @@ const peliculesFiltrades = computed(() =>
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
-}
-
-.cartelera_empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: var(--color-muted);
-  padding: 48px 0;
-  font-size: 0.95rem;
 }
 
 .banner-transicio {

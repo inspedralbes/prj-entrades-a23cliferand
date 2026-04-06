@@ -11,7 +11,7 @@
                 <div class="item-tarifa">
                     <label :for="'tarifa-' + seient.id">Tipus d'entrada:</label>
                     <select :id="'tarifa-' + seient.id" v-model="seient.tipus_client_id"
-                        @change="actualitzarPreu(seient)" class="select-tarifa">
+                        @change="actualitzarPreu(seient)" class="form-control select-tarifa">
                         <option v-for="preu in preusTarifa" :key="preu.tipus_client_id" :value="preu.tipus_client_id">
                             {{ preu.tipus_client.nom }} ({{ formatPreu(preu.preu) }})
                         </option>
@@ -33,8 +33,8 @@
 
         <div class="resum-final">
             <div class="camp-grup">
-                <label for="email">Correu electrònic per rebre les entrades:</label>
-                <input type="email" id="email" v-model="email" placeholder="el-teu@email.com" class="input-email"
+                <label for="email" class="form-label">Correu electrònic per rebre les entrades:</label>
+                <input type="email" id="email" v-model="email" placeholder="el-teu@email.com" class="form-control"
                     required />
             </div>
 
@@ -169,16 +169,6 @@ function finalitzarCompra() {
     white-space: nowrap;
 }
 
-.select-tarifa {
-    flex: 1;
-    padding: 0.5rem;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: 0.95rem;
-}
-
 .item-preu {
     text-align: right;
     font-weight: 700;
@@ -223,15 +213,6 @@ function finalitzarCompra() {
 .camp-grup label {
     font-weight: 600;
     color: var(--color-text);
-}
-
-.input-email {
-    padding: 0.8rem 1rem;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: 1.1rem;
 }
 
 .accions-finals {
