@@ -3,9 +3,9 @@
         <!-- Header -->
         <div class="compra-header">
             <div class="container compra-header_content">
-                <NuxtLink to="/" class="compra-back">
-                    ← Cartellera
-                </NuxtLink>
+                <a @click.prevent="$router.back()" href="#" class="compra-back">
+                    ← Tornar Enrera
+                </a>
                 <h1 v-if="sessio" class="section-titol">
                     Selecciona els teus seients
                 </h1>
@@ -36,6 +36,10 @@
                         <span class="info-label">Sala</span>
                         <span class="info-valor">{{ sessio.sala_nom }}</span>
                     </div>
+                    <div class="info-blok">
+                        <span class="info-label">Pelicula</span>
+                        <span class="info-valor">{{ sessio.pelicula_nom }}</span>
+                    </div>
                 </div>
 
                 <!-- Seient -->
@@ -51,8 +55,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getSeientsSessio } from '~/services/communicationManager'
+import { setupSeientsListeners, netejarSeientsListeners } from '~/services/socket'
 import SalaSeients from '~/components/Seleccio/SalaSeients.vue'
 import Seient from '~/components/Seleccio/Seient.vue'
 
@@ -83,6 +88,7 @@ onMounted(async () => {
             sala_id: dades.sala_id,
             sala_nom: dades.sala_nom,
             tarifa_nom: dades.tarifa_nom,
+            pelicula_nom: dades.pelicula_nom,
             data_hora: dades.data_hora
         }
 
@@ -101,6 +107,27 @@ onMounted(async () => {
     } finally {
         carregant.value = false
     }
+
+    // Configurem els listeners de sockets
+    try {
+        setupSeientsListeners(
+            sessioId,
+            seients.value,
+            (data) => {
+                console.log(' Seients actualitzats:', data);
+            },
+            (data) => {
+                console.log(' Seients alliberats:', data);
+            }
+        );
+    } catch (err) {
+        console.warn('Error configurant els listeners de Socket:', err);
+    }
+})
+
+onUnmounted(() => {
+    // Eliminem els listeners de sockets al desmuntar
+    netejarSeientsListeners();
 })
 
 // Aquesta funció s'executa quan el component fill (SalaSeients) ha creat una reserva

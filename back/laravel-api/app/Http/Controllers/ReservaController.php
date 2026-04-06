@@ -6,6 +6,8 @@ use App\Models\Reserva;
 use App\Models\SeientSessio;
 use App\Models\Sessio;
 use App\Models\PreuTarifa;
+use App\Services\SocketService;
+use App\Services\PeliculaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -113,6 +115,11 @@ class ReservaController extends Controller
         // 2. Obtenim el preu bàsic per mostrar-lo al client des d'un inici
         $preuTarifaDefault = $this->obtenirPreuClientEstandard($sessio->tarifa_id);
 
+        // 3. Obtenim el nom de la pel·lícula desde Redis
+        $peliculaService = app(PeliculaService::class);
+        $pelicula = $peliculaService->getByIdFromRedis($sessio->pellicula_id);
+        $peliculaNom = $pelicula['titol'] ?? 'Sense títol';
+
         return response()->json([
             'sessio_id' => $sessio->id,
             'sala_id' => $sessio->sala_id,
@@ -120,6 +127,7 @@ class ReservaController extends Controller
             'data_hora' => $sessio->data_hora,
             'tarifa_nom' => $sessio->tarifa->nom,
             'preu_tarifa' => $preuTarifaDefault,
+            'pelicula_nom' => $peliculaNom,
             'seients' => $seientsFormatejats,
         ], 200);
     }
@@ -163,17 +171,17 @@ class ReservaController extends Controller
     /**
      * Crea una reserva amb seients seleccionats (Síncron).
      */
-    public function reservarSeients(Request $request)
+    public function reservarSeients(Request $request, SocketService $socketService)
     {
-        // Validem les dades que ens arriben de la petició
-        $validated = $this->validarPeticioSeients($request);
-
-        $isGuest = is_string($request->usuari_id) && str_starts_with($request->usuari_id, 'guest_');
-        $finalUsuariId = $isGuest ? null : $validated['usuari_id'];
-        $finalGuestId = $isGuest ? $validated['usuari_id'] : null;
-
         try {
-            return DB::transaction(function () use ($validated, $finalUsuariId, $finalGuestId) {
+            // Validem les dades que ens arriben de la petició
+            $validated = $this->validarPeticioSeients($request);
+
+            $isGuest = is_string($request->usuari_id) && str_starts_with($request->usuari_id, 'guest_');
+            $finalUsuariId = $isGuest ? null : $validated['usuari_id'];
+            $finalGuestId = $isGuest ? $validated['usuari_id'] : null;
+
+            return DB::transaction(function () use ($validated, $finalUsuariId, $finalGuestId, $socketService) {
 
                 $seients = $this->comprovarIBloquejarSeients($validated['seient_ids'], $validated['sessio_id']);
 
@@ -193,6 +201,9 @@ class ReservaController extends Controller
                 // Enllacem els seients a la reserva i els marquem definitivament com a ocupats/reservats
                 $this->assignarSeientsAReserva($seients, $reserva, $validated['tipus_client_id'], $preuPerSeient);
 
+                // Sockets
+                $socketService->broadcastSeientsReservats($validated['sessio_id'], $validated['seient_ids']);
+
                 return response()->json($reserva->load('seientsSessio'), 201);
             });
         } catch (\Exception $e) {
@@ -204,9 +215,9 @@ class ReservaController extends Controller
     /**
      * Desocupa (allibera) seients d'una reserva
      */
-    public function desocuparSeients(Request $request)
+    public function desocuparSeients(Request $request, SocketService $socketService)
     {
-        // 1. Validem les dades que ens arriben de la petició
+        // Validem les dades que ens arriben de la petició
         $validated = $request->validate([
             'reserva_id' => 'required|integer|exists:reserva,id',
             'seient_ids' => 'required|array|min:1',
@@ -214,7 +225,7 @@ class ReservaController extends Controller
         ]);
 
         try {
-            return DB::transaction(function () use ($validated) {
+            return DB::transaction(function () use ($validated, $socketService) {
 
                 $reserva = Reserva::findOrFail($validated['reserva_id']);
 
@@ -229,7 +240,11 @@ class ReservaController extends Controller
                 $this->desvincularSeientsReserva($seients, $reserva);
 
                 // Eliminem la reserva
+                $sessioId = $reserva->sessio_id;
                 $reserva->delete();
+
+                // Socket
+                $socketService->broadcastSeientsAlliberats($sessioId, $validated['seient_ids']);
 
                 return response()->json([
                     'message' => 'Seients desocupats correctament i reserva eliminada',
@@ -266,6 +281,8 @@ class ReservaController extends Controller
      */
     private function validarPeticioSeients(Request $request)
     {
+        // \Log::info('Request body:', $request->all());
+
         $isGuest = is_string($request->usuari_id) && str_starts_with($request->usuari_id, 'guest_');
 
         $rules = [
