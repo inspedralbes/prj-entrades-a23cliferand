@@ -23,11 +23,13 @@ jobs:
       - name: Add to Known Hosts
         run: |
           echo "Connecting to server ${{ secrets.IP_SERVER }}..."
-          ssh-keyscan -H ${{ secrets.IP_SERVER }} >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.IP_SERVER }} >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Update, Configure and Deploy
         run: |
-          ssh -t ${{ secrets.USER_SERVER }}@${{ secrets.IP_SERVER }} bash -s << 'EOF'
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.USER_SERVER }}@${{ secrets.IP_SERVER }} bash -s << 'EOF'
             # Acceder al directorio del proyecto
             cd /prj-entrades-a23cliferand || exit
 
