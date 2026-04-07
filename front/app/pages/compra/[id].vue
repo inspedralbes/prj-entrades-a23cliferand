@@ -43,11 +43,34 @@
                 </div>
 
                 <!-- Seient -->
-                <Seient />
+                <Seient v-if="pas === 1" />
 
                 <!-- Selector de seients -->
-                <SalaSeients v-if="seients.length > 0" :seients="seients" :sessio-id="sessioId"
-                    @seients-changed="seientSeleccionats = $event" @reserva-creada="manejarReservaCreada" />
+                <div v-if="pas === 1">
+                    <SalaSeients v-if="seients.length > 0" :seients="seients" :sessio-id="sessioId"
+                        @seients-changed="seientSeleccionats = $event" @reserva-creada="manejarReservaCreada" />
+
+                    <div v-if="seientSeleccionats.length > 0" class="compra-actions-floating">
+                        <div class="container">
+                            <div class="actions-content">
+                                <div class="resum-breu">
+                                    <span class="label">Seients:</span>
+                                    <span class="valor">{{ seientSeleccionats.length }}</span>
+                                    <span class="separador">|</span>
+                                    <span class="label">Total aprox:</span>
+                                    <span class="valor">{{ formatPreu(totalAproximat) }}</span>
+                                </div>
+                                <button @click="anarAResum" class="btn btn-primary">
+                                    Continuar al resum →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resum de compra -->
+                <ResumCompra v-if="pas === 2" :seients="seientSeleccionats" :preus-tarifa="infoTarifa.preus"
+                    :default-preu="tarifaDefault" @enrere="pas = 1" @completat="finalitzarCompraTotal" />
 
             </div>
         </div>
@@ -56,15 +79,18 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getSeientsSessio } from '~/services/communicationManager'
+import { getSeientsSessio, getTarifaById, confirmarReservaFinal } from '~/services/communicationManager'
 import { setupSeientsListeners, netejarSeientsListeners } from '~/services/socket'
 import SalaSeients from '~/components/Seleccio/SalaSeients.vue'
 import Seient from '~/components/Seleccio/Seient.vue'
+import ResumCompra from '~/components/Seleccio/ResumCompra.vue'
+import { useGuestStore } from '~/stores/guestStore'
 
 const route = useRoute()
 const router = useRouter()
 const sessioId = route.params.id
 
+const pas = ref(1) // 1: Seients, 2: Resum
 const sessio = ref(null)
 const seients = ref([])
 const seientSeleccionats = ref([])
@@ -73,10 +99,15 @@ const processant = ref(false)
 const error = ref(null)
 
 const usuariId = ref(null)
-const tarifaData = ref(null)
+const tarifaDefault = ref(10)
+const infoTarifa = ref(null)
 
 useHead({
     title: 'Entrades'
+})
+
+const totalAproximat = computed(() => {
+    return seientSeleccionats.value.length * tarifaDefault.value
 })
 
 onMounted(async () => {
@@ -87,6 +118,7 @@ onMounted(async () => {
             id: dades.sessio_id,
             sala_id: dades.sala_id,
             sala_nom: dades.sala_nom,
+            tarifa_id: dades.tarifa_id || 1, // Ens cal l'ID per buscar els preus
             tarifa_nom: dades.tarifa_nom,
             pelicula_nom: dades.pelicula_nom,
             data_hora: dades.data_hora
@@ -94,8 +126,11 @@ onMounted(async () => {
 
         // Convertim seients a un array
         seients.value = dades.seients.flat()
+        tarifaDefault.value = dades.preu_tarifa || 10
 
-        tarifaData.value = dades.preu_tarifa || 10
+        // Carreguem tota la informació de la tarifa
+        const tarifaId = dades.tarifa_id || 1
+        infoTarifa.value = await getTarifaById(tarifaId)
 
         const token = localStorage.getItem('auth_token')
         if (token) {
@@ -126,22 +161,48 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-    // Eliminem els listeners de sockets al desmuntar
     netejarSeientsListeners();
 })
 
-// Aquesta funció s'executa quan el component fill (SalaSeients) ha creat una reserva
 function manejarReservaCreada(data) {
     console.log('Reserva creada:', data.reserva)
+}
 
-    // Redirigim a login si és usuari convidat/guest (usuari_id = 1) o no autenticat del tot
-    const usuariId = localStorage.getItem('usuari_id')
-    if (usuariId === '1') {
-        router.push('/login')
+function anarAResum() {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    pas.value = 2
+}
+
+async function finalitzarCompraTotal(dades) {
+    processant.value = true
+    try {
+        const guestStore = useGuestStore()
+        const usuariIdIdent = guestStore.getIdentifier()
+
+        const body = {
+            sessio_id: sessioId,
+            usuari_id: usuariIdIdent,
+            email: dades.email,
+            seients: dades.seients.map(s => ({
+                id: s.id,
+                tipus_client_id: s.tipus_client_id,
+                preu_aplicat: s.preu_aplicat
+            })),
+            total: dades.total
+        }
+
+        const response = await confirmarReservaFinal(body)
+
+        // Redirigim a la pàgina de confirmació amb l'ID de la reserva
+        const reservaId = response.id
+        router.push(`/confirmacio/${reservaId}`)
+    } catch (err) {
+        alert('Error al finalitzar la compra: ' + err.message)
+    } finally {
+        processant.value = false
     }
 }
 
-// Funció per mostrar la data i l'hora de manera entenedora
 function formatDataHora(dataHora) {
     const data = new Date(dataHora)
     const opcions = {
@@ -154,12 +215,26 @@ function formatDataHora(dataHora) {
     }
     return data.toLocaleDateString('ca-ES', opcions)
 }
+
+function formatPreu(preu) {
+    return new Intl.NumberFormat('ca-ES', { style: 'currency', currency: 'EUR' }).format(preu)
+}
 </script>
 
 <style scoped>
 .compra-page {
     min-height: 100vh;
     background-color: var(--color-bg);
+}
+
+.compra-main {
+    padding-bottom: 3rem;
+}
+
+.compra-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
 
 .compra-header {
@@ -187,10 +262,6 @@ function formatDataHora(dataHora) {
     opacity: 0.8;
 }
 
-.compra-main {
-    padding-bottom: 3rem;
-}
-
 .carregant {
     text-align: center;
     padding: 4rem 2rem;
@@ -206,23 +277,7 @@ function formatDataHora(dataHora) {
     animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.compra-content {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-.aviso-temporal {
+.avis-temporal {
     background-color: rgba(245, 200, 66, 0.1);
     border: 1px solid var(--color-reservat);
     border-radius: var(--radius-md);
@@ -232,7 +287,7 @@ function formatDataHora(dataHora) {
     text-align: center;
 }
 
-.aviso-temporal p {
+.avis-temporal p {
     margin: 0;
 }
 
@@ -282,7 +337,56 @@ function formatDataHora(dataHora) {
     font-size: 0.95rem;
 }
 
-/* Responsive */
+.compra-actions-floating {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    padding: 1.5rem 0;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--color-border);
+    z-index: 100;
+}
+
+.actions-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.resum-breu {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 1.1rem;
+}
+
+.resum-breu .label {
+    color: var(--color-muted);
+    font-weight: 600;
+}
+
+.resum-breu .valor {
+    color: var(--color-text);
+    font-weight: 800;
+}
+
+.resum-breu .separador {
+    color: var(--color-border);
+    margin: 0 0.5rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 @media (max-width: 640px) {
     .compra-header_content {
         flex-direction: column;

@@ -61,6 +61,19 @@ app.post('/api/broadcast', (req, res) => {
         return res.status(200).json({ success: true, message: 'Broadcast seats-released enviat via Socket.io' });
     }
 
+    if (event === 'seats-sold') {
+        // Emetem a tots els clients quan es venen seients definitivament
+        console.log(`Emetent seats-sold`);
+        io.emit('seats-updated', {
+            session_id: session_id,
+            seats: seats,
+            status: 'venut'
+        });
+        console.log(`Emissió seats-sold completada!`);
+
+        return res.status(200).json({ success: true, message: 'Broadcast seats-sold enviat via Socket.io' });
+    }
+
     return res.status(400).json({ success: false, message: 'Event desconegut' });
 });
 

@@ -2,11 +2,11 @@
   <section class="banner" :style="{ backgroundImage: `url(${imatgeFons})` }">
     <div class="banner_overlay"></div>
     <div class="container banner_content">
-      <span class="insignia insignia-genere">{{ genere }}</span>
       <h1 class="banner_title">{{ titol }}</h1>
       <p class="banner_desc">{{ descripcio }}</p>
       <div class="banner_meta">
-        <span class="banner_meta-item"><svg-icon type="mdi" :path="mdiClockOutline" size="18"></svg-icon> {{ durada }} min</span>
+        <span class="banner_meta-item"><svg-icon type="mdi" :path="mdiClockOutline" size="18"></svg-icon> {{ durada }}
+          min</span>
         <span class="banner_meta-dot">·</span>
         <span class="banner_meta-item"><svg-icon type="mdi" :path="mdiStar" size="18"></svg-icon> {{ puntuacio }}</span>
         <span class="banner_meta-dot">·</span>

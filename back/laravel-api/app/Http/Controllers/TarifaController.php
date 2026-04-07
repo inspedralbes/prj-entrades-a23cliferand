@@ -39,7 +39,7 @@ class TarifaController extends Controller
      */
     public function show($id)
     {
-        $tarifa = Tarifa::with('preus')->find($id);
+        $tarifa = Tarifa::with('preus.tipusClient')->find($id);
 
         if (!$tarifa) {
             return response()->json(['error' => 'Tarifa no trobada'], 404);

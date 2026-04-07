@@ -18,6 +18,11 @@ class Tarifa extends Model
         return $this->hasMany(PreuTarifa::class, 'tarifa_id');
     }
 
+    public function preus(): HasMany
+    {
+        return $this->preusTarifa();
+    }
+
     public function sessions(): HasMany
     {
         return $this->hasMany(Sessio::class, 'tarifa_id');
