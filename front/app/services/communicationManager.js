@@ -79,6 +79,13 @@ export function normalizeSessio(raw) {
   const salaObj = raw.sala ?? {};
   const occupancy = raw.occupancy ?? {};
 
+  let esPassat = false;
+  if (dataHora) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    esPassat = dataHora < hoy;
+  }
+
   return {
     id: raw.id,
     peliculaId: raw.pellicula_id ?? raw.pellicula?.imdb_id ?? "",
@@ -86,7 +93,7 @@ export function normalizeSessio(raw) {
     tarifaId: raw.tarifa_id,
     dataHora,
     dia: dataHora ? dataHora.toISOString().split("T")[0] : "",
-    esPassat: dataHora ? dataHora.toDateString() < new Date().toDateString() : false,
+    esPassat,
     hora: dataHora 
       ? dataHora.toLocaleTimeString("ca-ES", { hour: "2-digit", minute: "2-digit" })
       : "—",

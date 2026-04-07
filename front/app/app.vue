@@ -14,6 +14,6 @@ const guestStore = useGuestStore()
 
 onMounted(() => {
   guestStore.initGuest()
-  console.log('Socket conectado desde inicio:', socket.connected)
+  console.log('Socket? ', socket.connected)
 })
 </script>

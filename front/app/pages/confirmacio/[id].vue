@@ -61,12 +61,6 @@
                         Tornar a l'inici
                     </NuxtLink>
                 </div>
-
-                <div class="confirmacio-avise">
-                    <p>Si no reps les entrades en els pròxims minuts, revisa la carpeta de SPAM del teu correu
-                        electrònic.
-                    </p>
-                </div>
             </div>
         </div>
     </div>
@@ -303,16 +297,6 @@ function formatPreu(preu) {
 .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
-}
-
-.confirmacio-avise {
-    background: var(--color-warning-light, rgba(255, 152, 0, 0.1));
-    border-left: 4px solid var(--color-warning, #FF9800);
-    padding: 1rem;
-    border-radius: var(--radius-sm);
-    text-align: center;
-    font-size: 0.9rem;
-    color: var(--color-text-secondary);
 }
 
 .cargant {
