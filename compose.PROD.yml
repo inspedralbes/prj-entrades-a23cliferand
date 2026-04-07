@@ -1,5 +1,6 @@
 # Generar certificats
-# docker compose -f compose.PROD.yml run --rm --entrypoint tr3-cf-certbot certbot certonly --webroot --webroot-path /var/www/certbot -d cinema.winewithcola.com --email climentfean@gmail.com --agree-tos --no-eff-email
+# docker compose -f compose.PROD.yml run --rm tr3-cf-certbot certonly --webroot --webroot-path /var/www/certbot -d cinema.winewithcola.com --email climentfean@gmail.com --agree-tos --no-eff-email
+
 services:
   tr3-cf-nginx:
     build:
