@@ -74,7 +74,7 @@ jobs:
 
             echo "Configuració completada."
             echo "Desplegar serveis"
-            docker compose -f compose.PROD.yml up -d
+            docker compose -f compose.PROD.yml up -d --build
 
             echo "Desplegem finalitzat amb èxit!"
   
