@@ -3,6 +3,7 @@
 
 services:
   tr3-cf-nginx:
+    container_name: tr3-cf-nginx
     build:
       context: .
       dockerfile: nginx.Dockerfile
