@@ -6,98 +6,192 @@ use App\Models\Reserva;
 use App\Models\SeientSessio;
 use App\Models\Sessio;
 use App\Models\PreuTarifa;
+use App\Services\SocketService;
+use App\Services\PeliculaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReservaController extends Controller
 {
-    /**
-     * Mostra una llista de totes les reserves.
-     */
     public function index()
     {
-        return response()->json(Reserva::with('usuari', 'seients')->get(), 200);
+        return response()->json(Reserva::with('usuari', 'seientsSessio')->get(), 200);
     }
 
-    /**
-     * Emmagatzema una nova reserva a la base de dades.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'usuari_id' => 'nullable|integer|exists:usuaris,id',
-            'guest_id' => 'nullable|string',
-            'sessio_id' => 'required|integer|exists:sessions_cine,id',
-            'preu_total' => 'required|numeric|min:0',
-            'estat' => 'required|in:pendent,confirmada,caducada',
-        ]);
-
-        try {
-            $reserva = Reserva::create($validated);
-            return response()->json($reserva, 201);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
-    }
-
-    /**
-     * Mostra la reserva especificada.
-     */
     public function show($id)
     {
-        $reserva = Reserva::with('usuari', 'seients')->find($id);
-
-        if (!$reserva) {
+        $reserva = Reserva::with('seientsSessio', 'sessio.sala')->find($id);
+        if (!$reserva)
             return response()->json(['error' => 'Reserva no trobada'], 404);
+
+        // Transformem la resposta per incloure dades de la película i sessió
+        $response = $reserva->toArray();
+
+        if ($reserva->sessio) {
+            // Afegim dades de la sessió
+            $response['sessio_data'] = [
+                'data_hora' => $reserva->sessio->data_hora,
+                'sala_nom' => $reserva->sessio->sala->nom ?? null,
+                'sala_id' => $reserva->sessio->sala_id,
+            ];
+
+            // Intentem obtenir dades de la película del servei extern
+            try {
+                $peliculaService = app('App\Services\PeliculaService');
+                $pelicula = $peliculaService->getByIdFromRedis($reserva->sessio->pellicula_id);
+                $response['pelicula'] = [
+                    'titol' => $pelicula['titol'] ?? 'Desconegut',
+                    'cartell' => $pelicula['cartell'] ?? null,
+                    'imdbId' => $reserva->sessio->pellicula_id,
+                ];
+            } catch (\Exception $e) {
+                $response['pelicula'] = [
+                    'titol' => 'Desconegut',
+                    'cartell' => null,
+                    'imdbId' => $reserva->sessio->pellicula_id,
+                ];
+            }
         }
 
-        return response()->json($reserva, 200);
+        return response()->json($response, 200);
     }
 
     /**
-     * Actualitza la reserva especificada a la base de dades.
+     * Bloc temporal d'un seient a la taula seients_sessio (SENSE crear Reserva)
      */
-    public function update(Request $request, $id)
+    public function reservarSeients(Request $request, SocketService $socketService)
     {
-        $reserva = Reserva::find($id);
-
-        if (!$reserva) {
-            return response()->json(['error' => 'Reserva no trobada'], 404);
-        }
-
-        $validated = $request->validate([
-            'usuari_id' => 'nullable|integer|exists:usuaris,id',
-            'guest_id' => 'nullable|string',
-            'sessio_id' => 'sometimes|integer|exists:sessions_cine,id',
-            'preu_total' => 'sometimes|numeric|min:0',
-            'estat' => 'sometimes|in:pendent,confirmada,caducada',
-        ]);
-
         try {
-            $reserva->update($validated);
-            return response()->json($reserva, 200);
+            $validated = $request->validate([
+                'sessio_id' => 'required|integer|exists:sessions_cine,id',
+                'seient_ids' => 'required|array|min:1',
+                'seient_ids.*' => 'integer|exists:seients_sessio,id',
+                'usuari_id' => 'required|string',
+            ]);
+
+            $isGuest = str_starts_with($validated['usuari_id'], 'guest_');
+            $finalUsuariId = $isGuest ? null : intval($validated['usuari_id']);
+            $finalGuestId = $isGuest ? $validated['usuari_id'] : null;
+
+            return DB::transaction(function () use ($validated, $finalUsuariId, $finalGuestId, $socketService) {
+
+                $seients = SeientSessio::whereIn('id', $validated['seient_ids'])
+                    ->where('sessio_id', $validated['sessio_id'])
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($seients as $seient) {
+                    if ($seient->estat !== 'lliure') {
+                        throw new \Exception("El seient {$seient->fila}{$seient->numero} ja no està disponible", 409);
+                    }
+
+                    $seient->update([
+                        'estat' => 'reservat',
+                        'reservat_at' => now(),
+                        'usuari_id' => $finalUsuariId,
+                        'guest_id' => $finalGuestId
+                    ]);
+                }
+
+                $socketService->broadcastSeientsReservats($validated['sessio_id'], $validated['seient_ids']);
+
+                return response()->json(['message' => 'Seients bloquejats temporalment'], 200);
+            });
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
     /**
-     * Elimina la reserva especificada de la base de dades.
+     * Allibera els seients de seients_sessio
      */
-    public function destroy($id)
+    public function desocuparSeients(Request $request, SocketService $socketService)
     {
-        $reserva = Reserva::find($id);
+        $validated = $request->validate([
+            'sessio_id' => 'required|integer',
+            'seient_ids' => 'required|array|min:1',
+            'seient_ids.*' => 'integer|exists:seients_sessio,id',
+        ]);
 
-        if (!$reserva) {
-            return response()->json(['error' => 'Reserva no trobada'], 404);
+        try {
+            return DB::transaction(function () use ($validated, $socketService) {
+                $seients = SeientSessio::whereIn('id', $validated['seient_ids'])->get();
+
+                foreach ($seients as $seient) {
+                    $seient->update([
+                        'estat' => 'lliure',
+                        'reservat_at' => null,
+                        'usuari_id' => null,
+                        'guest_id' => null
+                    ]);
+                }
+
+                $socketService->broadcastSeientsAlliberats($validated['sessio_id'], $validated['seient_ids']);
+
+                return response()->json(['message' => 'Seients alliberats'], 200);
+            });
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-
-        $reserva->delete();
-        return response()->json(['message' => 'Reserva eliminada correctament'], 200);
     }
 
     /**
-     * Obté els seients d'una sessió amb el seu estat.
+     * Crea la reserva final i les línies a la pivot
+     */
+    public function confirmarCompraFinal(Request $request, SocketService $socketService)
+    {
+        $validated = $request->validate([
+            'sessio_id' => 'required|integer|exists:sessions_cine,id',
+            'usuari_id' => 'required|string',
+            'email' => 'required|email',
+            'seients' => 'required|array|min:1',
+            'seients.*.id' => 'required|integer|exists:seients_sessio,id',
+            'seients.*.tipus_client_id' => 'required|integer|exists:tipus_client,id',
+            'seients.*.preu_aplicat' => 'required|numeric',
+            'total' => 'required|numeric',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($validated, $socketService) {
+                $isGuest = str_starts_with($validated['usuari_id'], 'guest_');
+
+                $reserva = Reserva::create([
+                    'usuari_id' => $isGuest ? null : intval($validated['usuari_id']),
+                    'guest_id' => $isGuest ? $validated['usuari_id'] : null,
+                    'email' => $validated['email'],
+                    'sessio_id' => $validated['sessio_id'],
+                    'preu_total' => $validated['total'],
+                    'estat' => 'confirmada',
+                ]);
+
+                $seientIds = [];
+                foreach ($validated['seients'] as $item) {
+                    $reserva->seientsSessio()->attach($item['id'], [
+                        'tipus_client_id' => $item['tipus_client_id'],
+                        'preu_aplicat' => $item['preu_aplicat'],
+                    ]);
+
+                    SeientSessio::where('id', $item['id'])->update([
+                        'estat' => 'venut',
+                        'reservat_at' => null,
+                        'usuari_id' => null,
+                        'guest_id' => null
+                    ]);
+                    $seientIds[] = $item['id'];
+                }
+
+                // Emetem el socket perquè tothom vegi que ja estan venuts
+                $socketService->broadcastSeientsVenuts($validated['sessio_id'], $seientIds);
+
+                return response()->json($reserva->load('seientsSessio'), 201);
+            });
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Obté les seients d'una sessió
      */
     public function getSeientsSessio($sessioId)
     {
@@ -107,25 +201,27 @@ class ReservaController extends Controller
             return response()->json(['error' => 'Sessió no trobada'], 404);
         }
 
-        // 1. Extraiem l'algorisme d'obtenir i endreçar i formatejar els seients
         $seientsFormatejats = $this->ponerBonicoSeientsSessio($sessio);
-
-        // 2. Obtenim el preu bàsic per mostrar-lo al client des d'un inici
         $preuTarifaDefault = $this->obtenirPreuClientEstandard($sessio->tarifa_id);
+
+        $peliculaService = app(PeliculaService::class);
+        $pelicula = $peliculaService->getByIdFromRedis($sessio->pellicula_id);
 
         return response()->json([
             'sessio_id' => $sessio->id,
             'sala_id' => $sessio->sala_id,
             'sala_nom' => $sessio->sala->nom,
             'data_hora' => $sessio->data_hora,
+            'tarifa_id' => $sessio->tarifa_id,
             'tarifa_nom' => $sessio->tarifa->nom,
             'preu_tarifa' => $preuTarifaDefault,
+            'pelicula_nom' => $pelicula['titol'] ?? 'Sense títol',
             'seients' => $seientsFormatejats,
         ], 200);
     }
 
     /**
-     * Consulta els seients a la BD, els agrupa per fila i en neteja les dades.
+     * Formatea els seients d'una sessió
      */
     private function ponerBonicoSeientsSessio($sessio)
     {
@@ -135,7 +231,6 @@ class ReservaController extends Controller
             ->get()
             ->groupBy('fila');
 
-        // Mapeig: extraiem només els atributs rellevants amagant dades sensibles de la BD
         return $seients->map(function ($filSeients) {
             return $filSeients->map(function ($seient) {
                 return [
@@ -149,210 +244,22 @@ class ReservaController extends Controller
     }
 
     /**
-     * Cerca de preus (tipus de client = 1: base/estàndard)
+     * Obté el preu estàndard per a un client
      */
     private function obtenirPreuClientEstandard($tarifaId)
     {
         $preuTarifa = PreuTarifa::where('tarifa_id', $tarifaId)
             ->where('tipus_client_id', 1)
             ->first();
-
         return $preuTarifa ? floatval($preuTarifa->preu) : 0;
     }
 
     /**
-     * Crea una reserva amb seients seleccionats (Síncron).
-     */
-    public function reservarSeients(Request $request)
-    {
-        // Validem les dades que ens arriben de la petició
-        $validated = $this->validarPeticioSeients($request);
-
-        $isGuest = is_string($request->usuari_id) && str_starts_with($request->usuari_id, 'guest_');
-        $finalUsuariId = $isGuest ? null : $validated['usuari_id'];
-        $finalGuestId = $isGuest ? $validated['usuari_id'] : null;
-
-        try {
-            return DB::transaction(function () use ($validated, $finalUsuariId, $finalGuestId) {
-
-                $seients = $this->comprovarIBloquejarSeients($validated['seient_ids'], $validated['sessio_id']);
-
-                // Calculem el preu segons la tarifa i tipus de client
-                $preuPerSeient = $this->calcularPreuSeient($validated['sessio_id'], $validated['tipus_client_id']);
-                $preuTotal = $preuPerSeient * count($validated['seient_ids']);
-
-                // Creem el registre de la reserva (i la confirmem localment directament)
-                $reserva = Reserva::create([
-                    'usuari_id' => $finalUsuariId,
-                    'guest_id' => $finalGuestId,
-                    'sessio_id' => $validated['sessio_id'],
-                    'preu_total' => $preuTotal,
-                    'estat' => 'confirmada',
-                ]);
-
-                // Enllacem els seients a la reserva i els marquem definitivament com a ocupats/reservats
-                $this->assignarSeientsAReserva($seients, $reserva, $validated['tipus_client_id'], $preuPerSeient);
-
-                return response()->json($reserva->load('seientsSessio'), 201);
-            });
-        } catch (\Exception $e) {
-            $codiError = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
-            return response()->json(['error' => $e->getMessage()], $codiError);
-        }
-    }
-
-    /**
-     * Desocupa (allibera) seients d'una reserva
-     */
-    public function desocuparSeients(Request $request)
-    {
-        // 1. Validem les dades que ens arriben de la petició
-        $validated = $request->validate([
-            'reserva_id' => 'required|integer|exists:reserva,id',
-            'seient_ids' => 'required|array|min:1',
-            'seient_ids.*' => 'integer|exists:seients_sessio,id',
-        ]);
-
-        try {
-            return DB::transaction(function () use ($validated) {
-
-                $reserva = Reserva::findOrFail($validated['reserva_id']);
-
-                $seients = SeientSessio::whereIn('id', $validated['seient_ids'])
-                    ->lockForUpdate()
-                    ->get();
-
-                if ($seients->count() !== count($validated['seient_ids'])) {
-                    throw new \Exception('Alguns seients no són vàlids', 400);
-                }
-
-                $this->desvincularSeientsReserva($seients, $reserva);
-
-                // Eliminem la reserva
-                $reserva->delete();
-
-                return response()->json([
-                    'message' => 'Seients desocupats correctament i reserva eliminada',
-                    'reserva_id' => $reserva->id,
-                    'seients_alliberats' => $validated['seient_ids']
-                ], 200);
-
-            });
-        } catch (\Exception $e) {
-            $codiError = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 400;
-            return response()->json(['error' => $e->getMessage()], $codiError);
-        }
-    }
-
-    /**
-     * Desvincula seients d'una reserva i els marca com a lliures
-     */
-    private function desvincularSeientsReserva($seients, $reserva)
-    {
-        foreach ($seients as $seient) {
-            // Desvinculem del pivot
-            $reserva->seientsSessio()->detach($seient->id);
-
-            // Marquem com a lliure
-            $seient->update([
-                'estat' => 'lliure',
-                'reservat_at' => null,
-            ]);
-        }
-    }
-
-    /**
-     * Valida que els paràmetres enviats existeixin i siguin coherents.
-     */
-    private function validarPeticioSeients(Request $request)
-    {
-        $isGuest = is_string($request->usuari_id) && str_starts_with($request->usuari_id, 'guest_');
-
-        $rules = [
-            'sessio_id' => 'required|integer|exists:sessions_cine,id',
-            'seient_ids' => 'required|array|min:1',
-            'seient_ids.*' => 'integer|exists:seients_sessio,id',
-            'tipus_client_id' => 'required|integer',
-        ];
-
-        if ($isGuest) {
-            $rules['usuari_id'] = 'required|string';
-        } else {
-            $rules['usuari_id'] = 'required|integer|exists:usuaris,id';
-        }
-
-        return $request->validate($rules);
-    }
-
-    /**
-     * Comprova si els seients estan totalment lliures i els bloqueja temporalment.
-     */
-    private function comprovarIBloquejarSeients(array $seientIds, $sessioId)
-    {
-        $seients = SeientSessio::whereIn('id', $seientIds)
-            ->where('sessio_id', $sessioId)
-            ->lockForUpdate() // Pessimistic Lock
-            ->get();
-
-        if ($seients->count() !== count($seientIds)) {
-            throw new \Exception('Alguns seients no són vàlids per a aquesta sessió', 400);
-        }
-
-        foreach ($seients as $seient) {
-            if ($seient->estat !== 'lliure') {
-                throw new \Exception("El seient {$seient->fila}{$seient->numero} ja no està disponible", 409);
-            }
-        }
-
-        return $seients;
-    }
-
-    /**
-     * Cerca a la BD quant val aquest seient per la tarifa de la sessió.
-     */
-    private function calcularPreuSeient($sessioId, $tipusClientId)
-    {
-        $sessio = Sessio::find($sessioId);
-        $preuTarifa = PreuTarifa::where('tarifa_id', $sessio->tarifa_id)
-            ->where('tipus_client_id', $tipusClientId)
-            ->first();
-
-        if (!$preuTarifa) {
-            throw new \Exception("Preu no trobat per aquesta tarifa i tipus de client", 400);
-        }
-
-        return $preuTarifa->preu;
-    }
-
-    /**
-     * Relaciona cada seient amb la Reserva (Taula Pivot) i ho marca com reservat.
-     */
-    private function assignarSeientsAReserva($seients, $reserva, $tipusClientId, $preuAplicat)
-    {
-        foreach ($seients as $seient) {
-            $reserva->seientsSessio()->attach(
-                $seient->id,
-                [
-                    'tipus_client_id' => $tipusClientId,
-                    'preu_aplicat' => $preuAplicat,
-                ]
-            );
-
-            // Marquem l'estat del seient
-            $seient->update([
-                'estat' => 'reservat',
-                'reservat_at' => now(),
-            ]);
-        }
-    }
-
-    /**
-     * Expira reserves temporals (per scheduler)
+     * Expira les reserves temporals
      */
     public function expirarReservesTemporals()
     {
         try {
-            // Alliberar seients reservats fa més de 5 minuts
             $seients = SeientSessio::where('estat', 'reservat')
                 ->where('reservat_at', '<', now()->subMinutes(5))
                 ->get();
@@ -360,56 +267,40 @@ class ReservaController extends Controller
             foreach ($seients as $seient) {
                 $seient->update([
                     'estat' => 'lliure',
-                    'reservat_at' => null
+                    'reservat_at' => null,
+                    'usuari_id' => null,
+                    'guest_id' => null
                 ]);
             }
-
-            return response()->json([
-                'message' => 'Reserves expirades',
-                'seients_alliberats' => $seients->count()
-            ], 200);
-
+            return response()->json(['message' => 'Bloquejos expirats'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
     /**
-     * Obté les reserves de l'usuari per a una sessió específica
+     * Obté les reserves d'un usuari per a una sessió
      */
     public function lesMevesReserves($usuarioId, $sessioId)
     {
         try {
-            $isGuest = is_string($usuarioId) && str_starts_with($usuarioId, 'guest_');
-
-            $reserves = Reserva::where(function ($query) use ($usuarioId, $isGuest) {
-                if ($isGuest) {
-                    // Si és guest, buscar només per guest_id
-                    $query->where('guest_id', $usuarioId);
-                } else {
-                    // Si és usuari, buscar per usuari_id
-                    $query->where('usuari_id', intval($usuarioId));
-                }
-            })
-                ->where('sessio_id', $sessioId)
-                ->with('seientsSessio')
+            $isGuest = str_starts_with($usuarioId, 'guest_');
+            $seients = SeientSessio::where('sessio_id', $sessioId)
+                ->where(function ($q) use ($usuarioId, $isGuest) {
+                    if ($isGuest)
+                        $q->where('guest_id', $usuarioId);
+                    else
+                        $q->where('usuari_id', intval($usuarioId));
+                })
+                ->where('estat', 'reservat')
                 ->get();
 
-            // Extraem els seients de les reserves
-            $seients = $reserves->flatMap(function ($reserva) {
-                return $reserva->seientsSessio->map(function ($seient) {
-                    return [
-                        'id' => $seient->id,
-                        'fila' => $seient->fila,
-                        'numero' => $seient->numero,
-                        'estat' => $seient->estat,
-                        'reserva_id' => $seient->pivot->reserva_id ?? null,
-                    ];
-                });
-            });
-
-            return response()->json($seients->values(), 200);
-
+            return response()->json($seients->map(fn($s) => [
+                'id' => $s->id,
+                'fila' => $s->fila,
+                'numero' => $s->numero,
+                'estat' => $s->estat,
+            ]), 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }

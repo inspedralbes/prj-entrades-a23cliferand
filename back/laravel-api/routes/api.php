@@ -35,6 +35,7 @@ Route::get('/reserves/usuario/{usuarioId}/sessio/{sessioId}', [ReservaController
     ->where('usuarioId', '.*');
 Route::post('/reserves/seient_reservar', [ReservaController::class, 'reservarSeients']);
 Route::post('/reserves/seient_desocupar', [ReservaController::class, 'desocuparSeients']);
+Route::post('/reserves/confirmar', [ReservaController::class, 'confirmarCompraFinal']);
 
 // Scheduler - Expirar reserves temporals (per cron job)
 Route::post('/seients/expirar-reserves-temporals', [ReservaController::class, 'expirarReservesTemporals']);

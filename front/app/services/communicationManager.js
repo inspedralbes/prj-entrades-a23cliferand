@@ -1,4 +1,7 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+const NOMS_DIA = ['Dg', 'Dl', 'Dm', 'Dc', 'Dj', 'Dv', 'Ds'];
+const NOMS_MES = ['Gen', 'Feb', 'Març', 'Abr', 'Maig', 'Juny', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Des'];
 
 // Funció per a tot
 async function request(endpoint, options = {}) {
@@ -23,11 +26,6 @@ async function request(endpoint, options = {}) {
     body: options.body
   });
 
-  // Si la resposta falla, ho detectem de forma clara
-  if (response.ok === false) {
-    throw new Error("S'ha produït un error de connexió amb la API o el servidor.");
-  }
-
   // Casos on el servidor no vol retornar un JSON (codi 204 = No Content)
   if (response.status === 204) {
     return null;
@@ -35,88 +33,80 @@ async function request(endpoint, options = {}) {
 
   // Retornem directament les dades ja desxifrades de JSON a JavaScript
   const dadesResultants = await response.json();
+
+  // Si la resposta falla, ho detectem de forma clara
+  if (response.ok === false) {
+    console.error(`${response.status}:`, dadesResultants);
+    console.log((dadesResultants.error || dadesResultants.message || "S'ha produït un error de connexió amb la API o el servidor."));
+  }
+
   return dadesResultants;
 }
 
-// Adaptar les dades de les pelicules
 export function normalizePelicula(raw) {
-  // Gèneres
-  const generes =
-    typeof raw.generes === "string"
-      ? raw.generes
-          .split(",")
-          .map((g) => g.trim())
-          .filter(Boolean)
-      : Array.isArray(raw.generes)
-        ? raw.generes
-        : [];
+  // Normalizar géneros de forma más clara
+  const parseGeneres = (generes) => {
+    if (typeof generes === "string") {
+      return generes.split(",").map(g => g.trim()).filter(Boolean);
+    }
+    return Array.isArray(generes) ? generes : [];
+  };
 
-  // Cartell
-  let cartell = "";
-  if (raw.cartell_b64 && raw.cartell_mime) {
-    cartell = `data:${raw.cartell_mime};base64,${raw.cartell_b64}`;
-  } else {
-    cartell = raw.cartell ?? "";
-  }
+  // Normalizar cartell
+  const parseCartell = (b64, mime, fallback) => {
+    return (b64 && mime) ? `data:${mime};base64,${b64}` : fallback ?? "";
+  };
 
   return {
-    // identificador = IMDB ID
     id: raw.imdb_id ?? raw.id ?? "",
     titol: raw.titol ?? "",
     titolOriginal: raw.titol_original ?? "",
     sinopsi: raw.sinopsi ?? "",
-    poster: cartell,
-    backdrop: cartell, // Usem el mateix cartell (Base64 si n'hi ha)
-    duracio: raw.duracio ? Number(raw.duracio) : 0,
-    any: raw.any ? Number(raw.any) : 0,
-    puntuacio: raw.rating ? String(raw.rating) : "—",
-    vots: raw.vots ? Number(raw.vots) : 0,
-    generes,
+    poster: parseCartell(raw.cartell_b64, raw.cartell_mime, raw.cartell),
+    backdrop: parseCartell(raw.cartell_b64, raw.cartell_mime, raw.cartell),
+    duracio: Number(raw.duracio) || 0,
+    any: Number(raw.any) || 0,
+    puntuacio: String(raw.rating) ?? "—",
+    vots: Number(raw.vots) || 0,
+    generes: parseGeneres(raw.generes),
     tipus: raw.tipus ?? "",
   };
 }
 
-// Adaptar les dades de les sessions
+// Función más limpia y legible
 export function normalizeSessio(raw) {
   const dataHora = raw.data_hora ? new Date(raw.data_hora) : null;
-
   const salaObj = raw.sala ?? {};
-  const peliculaObj = raw.pellicula ?? {};
+  const occupancy = raw.occupancy ?? {};
 
-  // Noms dels dies de la setmana i mesos
-  const nomsDia = ['Dg', 'Dl', 'Dm', 'Dc', 'Dj', 'Dv', 'Ds'];
-  const nomsMes = ['Gen', 'Feb', 'Març', 'Abr', 'Maig', 'Juny', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Des'];
+  let esPassat = false;
+  if (dataHora) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    esPassat = dataHora < hoy;
+  }
 
   return {
     id: raw.id,
-    peliculaId: raw.pellicula_id ?? peliculaObj.imdb_id ?? "",
+    peliculaId: raw.pellicula_id ?? raw.pellicula?.imdb_id ?? "",
     salaId: raw.sala_id,
     tarifaId: raw.tarifa_id,
     dataHora,
-    // Dia per agrupar les sessions (format YYYY-MM-DD)
-    dia: dataHora ? dataHora.toISOString().split("T")[0] || "" : "",
-    esPassat: dataHora
-      ? new Date(dataHora).setHours(0, 0, 0, 0) <
-        new Date().setHours(0, 0, 0, 0)
-      : false,
-    hora: dataHora
-      ? dataHora.toLocaleTimeString("ca-ES", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
+    dia: dataHora ? dataHora.toISOString().split("T")[0] : "",
+    esPassat,
+    hora: dataHora 
+      ? dataHora.toLocaleTimeString("ca-ES", { hour: "2-digit", minute: "2-digit" })
       : "—",
-    // Informació de data per a la tarjeta
-    diaSemana: dataHora ? nomsDia[dataHora.getDay()] : "—",
+    diaSemana: dataHora ? NOMS_DIA[dataHora.getDay()] : "—",
     numDia: dataHora ? dataHora.getDate() : "—",
-    mesSessio: dataHora ? nomsMes[dataHora.getMonth()] : "—",
+    mesSessio: dataHora ? NOMS_MES[dataHora.getMonth()] : "—",
     sala: salaObj.nom ?? `Sala ${raw.sala_id}`,
     capacitat: salaObj.capacitat ?? 0,
-    // Dades d'ocupació del servidor
-    placesLliures: raw.occupancy?.seients_lliures ?? null,
-    seientReservats: raw.occupancy?.seients_reservats ?? 0,
-    seientVenuts: raw.occupancy?.seients_venuts ?? 0,
-    totalSeients: raw.occupancy?.total_seients ?? 0,
-    ocupacioPercent: raw.occupancy?.percentatge_ocupat ?? null,
+    placesLliures: occupancy.seients_lliures ?? null,
+    seientReservats: occupancy.seients_reservats ?? 0,
+    seientVenuts: occupancy.seients_venuts ?? 0,
+    totalSeients: occupancy.total_seients ?? 0,
+    ocupacioPercent: occupancy.percentatge_ocupat ?? null,
   };
 }
 
@@ -188,6 +178,7 @@ export function getReservesAll() { return request("/reserves"); }
 export function getReservesMeves() { return request("/reserves?meves=1"); }
 export function getReservaById(id) { return request(`/reserves/${id}`); }
 export function createReserva(data) { return request("/reserves", { method: "POST", body: JSON.stringify(data) }); }
+export function confirmarReservaFinal(data) { return request("/reserves/confirmar", { method: "POST", body: JSON.stringify(data) }); }
 export function deleteReserva(id) { return request(`/reserves/${id}`, { method: "DELETE" }); }
 
 // Obté els seients disponibles per a una sessió
@@ -195,25 +186,24 @@ export async function getSeientsSessio(sessioId) {
   return request(`/sessions/${sessioId}/seients`);
 }
 
-// Crea una reserva d'un sol seient (des del click)
+// Bloqueja temporalment un seient
 export async function crearReservaSeient(sessioId, seientId, usuariId) {
   return request("/reserves/seient_reservar", {
     method: "POST",
     body: JSON.stringify({
       usuari_id: usuariId,
       sessio_id: sessioId,
-      seient_ids: [seientId],
-      tipus_client_id: 1
+      seient_ids: [seientId]
     })
   });
 }
 
-// Desocupa (allibera) seients d'una reserva
-export async function desocuparSeients(reservaId, seientIds) {
+// Desocupa (allibera) bloquejos temporals
+export async function desocuparSeients(sessioId, seientIds) {
   return request("/reserves/seient_desocupar", {
     method: "POST",
     body: JSON.stringify({
-      reserva_id: reservaId,
+      sessio_id: sessioId,
       seient_ids: seientIds
     })
   });

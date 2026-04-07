@@ -171,14 +171,14 @@ function aplicarReservaCompletada(seient, reserva) {
 function desseleccionarSeient(seient) {
     const index = seientSeleccionats.value.findIndex(s => s.id === seient.id)
     if (index !== -1) {
-        const removed = seientSeleccionats.value.splice(index, 1)[0]
+        seientSeleccionats.value.splice(index, 1)
         seient.estat = 'lliure'
         sincronitzarAMemoria()
-        if (removed.reserva_id) {
-            desocuparSeients(removed.reserva_id, [seient.id]).catch(err => {
-                console.error("No se pudo desocupar la reserva asociada al asiento", err)
-            })
-        }
+
+        desocuparSeients(props.sessioId, [seient.id]).catch(err => {
+            console.error("No s'ha pogut desocupar el seient", err)
+        })
+
         emit('seients-changed', seientSeleccionats.value)
     }
 }

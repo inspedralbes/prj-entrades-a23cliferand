@@ -37,7 +37,7 @@
         <div v-else class="cartelera_grid">
           <TarjetaPelicula v-for="pelicula in peliculesFiltrades" :key="pelicula.id" :pelicula="pelicula" />
           <p v-if="peliculesFiltrades.length === 0 && !carregant" class="cartelera_empty">
-            No hi ha pel·lícules per al gènere seleccionat.
+            No hi ha pel·lícules.
           </p>
         </div>
       </div>

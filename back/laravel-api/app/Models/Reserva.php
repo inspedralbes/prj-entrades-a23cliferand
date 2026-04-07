@@ -13,6 +13,7 @@ class Reserva extends Model
     protected $fillable = [
         'usuari_id',
         'guest_id',
+        'email',
         'sessio_id',
         'preu_total',
         'estat',
@@ -34,10 +35,13 @@ class Reserva extends Model
         return $this->belongsTo(Sessio::class, 'sessio_id');
     }
 
+    /**
+     * Obté els seients d'una reserva
+     */
     public function seientsSessio(): BelongsToMany
     {
         return $this->belongsToMany(SeientSessio::class, 'reserva_seient')
-                    ->withPivot('tipus_client_id', 'preu_aplicat')
-                    ->withTimestamps();
+            ->withPivot('tipus_client_id', 'preu_aplicat')
+            ->withTimestamps();
     }
 }
