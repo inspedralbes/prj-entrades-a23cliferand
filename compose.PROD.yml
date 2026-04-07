@@ -16,7 +16,7 @@ services:
       - ./certbot/www:/var/www/certbot
     depends_on:
       tr3-cf-laravel-api:
-        condition: service_healthy
+        condition: service_started
     networks:
       - general
     restart: unless-stopped
@@ -45,16 +45,6 @@ services:
     depends_on:
       - tr3-cf-postgres
     command: sh -c "php artisan key:generate && php artisan storage:link || true && php-fpm"
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'php -r ''$s=@fsockopen("127.0.0.1",9000); if($s){fclose($s); exit(0);} exit(1);''',
-        ]
-      interval: 10s
-      timeout: 3s
-      retries: 12
-      start_period: 15s
     networks:
       - general
     environment:
