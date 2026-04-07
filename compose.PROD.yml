@@ -27,6 +27,8 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+    networks:
+      - general
     # Loop per renovar certificats cada 12h
     entrypoint: "/bin/sh -c 'trap exit TERM; certbot certonly --webroot --webroot-path /var/www/certbot -d cinema.winewithcola.com --email climentfean@gmail.com --agree-tos --no-eff-email --expand 2>/dev/null || true; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
@@ -75,16 +77,6 @@ services:
     #   - 5432:5432
     networks:
       - general
-
-  tr3-cf-portainer:
-    container_name: tr3-cf-portainer
-    image: portainer/portainer-ce:lts
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-    ports:
-      - 9443:9443
   tr3-cf-pgadmin:
     image: dpage/pgadmin4
     container_name: tr3-cf-pgadmin
