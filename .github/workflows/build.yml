@@ -41,6 +41,9 @@ jobs:
             echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
 
             echo "Configurant fitxer .env de laravel-api..."
+            cd ./back/laravel-api
+            echo "Copiant fitxer .env.PROD a .env..."
+            cp .env.PROD .env
             echo "CONFIG POSTGRES"
             echo "DB_CONNECTION=pgsql" >> .env
             echo "DB_HOST=tr3-cf-postgres" >> .env
@@ -56,11 +59,15 @@ jobs:
             cd ../..
 
             echo "Configurant fitxer .env de node..."
-            #Per ara res
+            cd ./back/node
+            echo "Copiant fitxer .env.PROD a .env..."
+            cp .env.PROD .env
+            cd ../..
 
             echo "Configurant fitxer .env de frontend..."
             cd ./front
-            echo "VITE_API_URL=http://cinema.winewithcola.com/back/api" >> .env
+            echo "VITE_API_URL=http://cinema.winewithcola.com/back/api" > .env
+            echo "VITE_SOCKET_URL=http://cinema.winewithcola.com/node" >> .env
             cd ..
 
             echo "Configuració completada."
