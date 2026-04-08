@@ -3,6 +3,8 @@ import { defineStore } from "pinia";
 export const useGuestStore = defineStore("guestStore", {
   state: () => ({
     userId: null,
+    nom: null,
+    token: null,
     guestId: null,
   }),
   actions: {
@@ -33,6 +35,43 @@ export const useGuestStore = defineStore("guestStore", {
       this.guestId = null;
       localStorage.setItem("usuari_id", id);
       localStorage.removeItem("guest_id");
+    },
+
+    setAuthData(userId, nom, token) {
+      this.userId = userId;
+      this.nom = nom;
+      this.token = token;
+      this.guestId = null;
+
+      localStorage.setItem("usuari_id", userId);
+      localStorage.setItem("auth_token", token);
+      localStorage.setItem("usuari_nom", nom);
+      localStorage.removeItem("guest_id");
+    },
+
+    loadAuthData() {
+      if (globalThis.window) {
+        const storedToken = localStorage.getItem("auth_token");
+        const storedUserId = localStorage.getItem("usuari_id");
+        const storedNom = localStorage.getItem("usuari_nom");
+
+        if (storedToken && storedUserId) {
+          this.token = storedToken;
+          this.userId = storedUserId;
+          this.nom = storedNom;
+          this.guestId = null;
+        }
+      }
+    },
+
+    clearAuthData() {
+      this.userId = null;
+      this.nom = null;
+      this.token = null;
+
+      localStorage.removeItem("usuari_id");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("usuari_nom");
     },
 
     getIdentifier() {

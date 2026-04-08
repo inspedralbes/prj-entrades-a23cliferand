@@ -8,10 +8,17 @@ use App\Http\Controllers\ReservaController;
 use App\Http\Controllers\SessioController;
 use App\Http\Controllers\SalaController;
 use App\Http\Controllers\TarifaController;
+use App\Http\Controllers\AuthController;
 
 
 // Aquí pots definir els teus endpoints API.
 // Aquestes rutes són carregades amb el middleware 'api'.
+
+// Auth
+Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
