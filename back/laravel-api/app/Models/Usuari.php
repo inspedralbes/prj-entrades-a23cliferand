@@ -16,6 +16,7 @@ class Usuari extends Authenticatable
         'nom',
         'email',
         'password',
+        'rol',
     ];
 
     protected $hidden = [
