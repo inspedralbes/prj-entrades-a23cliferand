@@ -6,7 +6,6 @@
     <span class="dia-tab_label">{{ dia.label }}</span>
     <span class="dia-tab_num">{{ dia.num }}</span>
     <span class="dia-tab_mes">{{ dia.mes }}</span>
-    <span class="dia-tab_count">{{ dia.count }}</span>
   </button>
 </template>
 
@@ -64,18 +63,6 @@ defineEmits(['select'])
 .dia-tab--active .dia-tab_num,
 .dia-tab--active .dia-tab_mes {
   color: var(--color-accent);
-}
-
-.dia-tab_count {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: var(--color-accent);
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 50px;
 }
 
 .dia-tab--disabled {

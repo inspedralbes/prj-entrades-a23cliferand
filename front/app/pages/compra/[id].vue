@@ -4,7 +4,7 @@
         <div class="compra-header">
             <div class="container compra-header_content">
                 <a @click.prevent="$router.back()" href="#" class="compra-back">
-                    ← Tornar Enrera
+                    ← Tornar Info Pelicula
                 </a>
                 <h1 v-if="sessio" class="section-titol">
                     Selecciona els teus seients

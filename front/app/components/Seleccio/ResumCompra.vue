@@ -39,7 +39,7 @@
             </div>
 
             <div class="accions-finals">
-                <button type="button" @click="$emit('enrere')" class="btn btn-secondary">
+                <button type="button" @click="$emit('enrere')" class="btn btn-enrere">
                     Canviar seients
                 </button>
                 <button type="button" @click="finalitzarCompra" :disabled="!isEmailValid || processant"
@@ -244,6 +244,13 @@ function finalitzarCompra() {
     flex: 2;
     font-size: 1.2rem;
     padding: 1rem;
+}
+
+.btn-enrere {
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    transition: background-color var(--transition);
 }
 
 @media (max-width: 768px) {
