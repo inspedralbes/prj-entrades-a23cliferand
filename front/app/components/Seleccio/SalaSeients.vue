@@ -59,26 +59,21 @@ const seientsPerFila = computed(() => {
     return organitzarSeientsPerFila(props.seients)
 })
 
+// Carrega les reserves des del servidor en la primera visita
 onMounted(async () => {
     try {
         const usuarioId = obtenirIdUsuariValid()
-
-        const reserves = await lesMevesReserves(usuarioId, props.sessioId)
+        const reserves = usuarioId ? await lesMevesReserves(usuarioId, props.sessioId) : []
 
         if (reserves.length > 0) {
             seientSeleccionats.value = reserves
-            sincronitzarAMemoria()
-            emit('seients-changed', seientSeleccionats.value)
         }
+
+        emit('seients-changed', seientSeleccionats.value)
     } catch (err) {
-        console.warn('Error carregant reserves previes:', err.message)
+        console.warn('Error carregant reserves del servidor:', err.message)
     }
 });
-
-// Desa els seients a la memòria del navegador (per si de cas)
-function sincronitzarAMemoria() {
-    localStorage.setItem(`reserves_sessio_${props.sessioId}`, JSON.stringify(seientSeleccionats.value));
-}
 
 // Per tenir-ho tot ordenat
 function organitzarSeientsPerFila(seientsPlana) {
@@ -152,19 +147,20 @@ async function crearReservaClick(seient) {
 // Retorna l'ID correcte i de pas assegura cridar 'init' si ens havíem oblidat
 function obtenirIdUsuariValid() {
     const guestStore = useGuestStore()
-    if (!guestStore.guestId) {
+
+    guestStore.loadAuthData()
+
+    if (!guestStore.getIdentifier()) {
         guestStore.initGuest()
     }
-    return guestStore.guestId
+
+    return guestStore.getIdentifier()
 }
 
-// Emmagatzema objectes al array limitant manipulacions en altres blocs
+// Aplica la reserva completada al array local
 function aplicarReservaCompletada(seient, reserva) {
     seient.reserva_id = reserva.id
     seientSeleccionats.value.push(seient)
-
-    sincronitzarAMemoria()
-
     emit('reserva-creada', { reserva, seient })
 }
 
@@ -173,7 +169,6 @@ function desseleccionarSeient(seient) {
     if (index !== -1) {
         seientSeleccionats.value.splice(index, 1)
         seient.estat = 'lliure'
-        sincronitzarAMemoria()
 
         desocuparSeients(props.sessioId, [seient.id]).catch(err => {
             console.error("No s'ha pogut desocupar el seient", err)

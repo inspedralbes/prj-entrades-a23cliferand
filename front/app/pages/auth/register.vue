@@ -3,7 +3,6 @@
         <div class="auth-container">
             <div class="auth-card">
                 <h1 class="auth-title">Registra't</h1>
-                <p class="auth-subtitle">Cinema Paradise</p>
 
                 <!-- Missatge d'error -->
                 <div v-if="error" class="alert alert-error">
@@ -34,7 +33,7 @@
                     <div class="form-group">
                         <label for="password" class="form-label">Contrasenya</label>
                         <input id="password" v-model="form.password" type="password" class="form-input"
-                            placeholder="Crea una contrasenya segura" :disabled="loading" required />
+                            placeholder="Almenys 8 caràcters" :disabled="loading" required />
                     </div>
 
                     <!-- Confirmar contrasenya -->
@@ -59,7 +58,7 @@
                 <div class="auth-footer">
                     <p class="auth-text">
                         Ja tens compte?
-                        <NuxtLink to="/auth/login" class="auth-link">Inicia sessió</NuxtLink>
+                        <NuxtLink :to="loginLink" class="auth-link">Inicia sessió</NuxtLink>
                     </p>
                 </div>
             </div>
@@ -69,11 +68,12 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
-import { register } from "~/services/communicationManager";
+import { useRouter, useRoute } from "vue-router";
+import { register, transferirReservesGuest } from "~/services/communicationManager";
 import { useGuestStore } from "~/stores/guestStore";
 
 const router = useRouter();
+const route = useRoute();
 const guestStore = useGuestStore();
 
 const form = ref({
@@ -91,6 +91,18 @@ const passwordMismatch = computed(
     () => form.value.password && form.value.passwordConfirm && form.value.password !== form.value.passwordConfirm
 );
 
+const redirectPath = computed(() => (typeof route.query.redirect === "string" ? route.query.redirect : null));
+
+const loginLink = computed(() => {
+    if (!redirectPath.value) return "/auth/login";
+    return {
+        path: "/auth/login",
+        query: {
+            redirect: redirectPath.value,
+        },
+    };
+});
+
 const handleRegister = async () => {
     error.value = "";
     success.value = "";
@@ -103,8 +115,8 @@ const handleRegister = async () => {
         return;
     }
 
-    if (form.value.password.length < 6) {
-        error.value = "La contrasenya ha de tenir almenys 6 caràcters.";
+    if (form.value.password.length < 8) {
+        error.value = "La contrasenya ha de tenir almenys 8 caràcters.";
         loading.value = false;
         return;
     }
@@ -116,6 +128,8 @@ const handleRegister = async () => {
     }
 
     try {
+        // Capturem el guest_id ANTES de registrar-se (si n'hi ha)
+        const guestIdAbansRegistre = guestStore.guestId;
         const response = await register(form.value.nom, form.value.email, form.value.password);
 
         // Verificar si el registre ha anat bé
@@ -123,10 +137,21 @@ const handleRegister = async () => {
             // Si ja retorna token, significa que s'ha registrat i autenticat
             const userId = response.user?.id;
             const nom = response.user?.nom;
+            const email = response.user?.email;
 
-            guestStore.setAuthData(userId, nom, response.token);
+            guestStore.setAuthData(userId, nom, response.token, email);
+
+            // Transferim les reserves del guest al nou usuari autenticat
+            if (guestIdAbansRegistre) {
+                try {
+                    await transferirReservesGuest(guestIdAbansRegistre);
+                } catch (transferError) {
+                    console.warn("No s'han pogut transferir les reserves del guest", transferError);
+                }
+            }
+
             success.value = "Registre completat correctament! Redirigint...";
-            setTimeout(() => router.push("/"), 2000);
+            setTimeout(() => router.push(redirectPath.value || "/"), 1000);
         } else if (response.ok === false || response.error) {
             error.value =
                 response.error ||

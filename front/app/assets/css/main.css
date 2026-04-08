@@ -242,12 +242,6 @@ ul {
   letter-spacing: 1px;
 }
 
-.auth-subtitle {
-  font-size: 0.9rem;
-  color: var(--color-muted);
-  margin: 0 0 30px 0;
-}
-
 /* Alertes */
 .alert {
   padding: 12px 16px;

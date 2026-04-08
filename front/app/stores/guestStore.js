@@ -4,6 +4,7 @@ export const useGuestStore = defineStore("guestStore", {
   state: () => ({
     userId: null,
     nom: null,
+    email: null,
     token: null,
     guestId: null,
   }),
@@ -37,15 +38,17 @@ export const useGuestStore = defineStore("guestStore", {
       localStorage.removeItem("guest_id");
     },
 
-    setAuthData(userId, nom, token) {
+    setAuthData(userId, nom, token, email = null) {
       this.userId = userId;
       this.nom = nom;
+      this.email = email;
       this.token = token;
       this.guestId = null;
 
       localStorage.setItem("usuari_id", userId);
       localStorage.setItem("auth_token", token);
       localStorage.setItem("usuari_nom", nom);
+      localStorage.setItem("usuari_email", email);
       localStorage.removeItem("guest_id");
     },
 
@@ -54,11 +57,13 @@ export const useGuestStore = defineStore("guestStore", {
         const storedToken = localStorage.getItem("auth_token");
         const storedUserId = localStorage.getItem("usuari_id");
         const storedNom = localStorage.getItem("usuari_nom");
+        const storedEmail = localStorage.getItem("usuari_email");
 
         if (storedToken && storedUserId) {
           this.token = storedToken;
           this.userId = storedUserId;
           this.nom = storedNom;
+          this.email = storedEmail;
           this.guestId = null;
         }
       }
@@ -67,11 +72,13 @@ export const useGuestStore = defineStore("guestStore", {
     clearAuthData() {
       this.userId = null;
       this.nom = null;
+      this.email = null;
       this.token = null;
 
       localStorage.removeItem("usuari_id");
       localStorage.removeItem("auth_token");
       localStorage.removeItem("usuari_nom");
+      localStorage.removeItem("usuari_email");
     },
 
     getIdentifier() {

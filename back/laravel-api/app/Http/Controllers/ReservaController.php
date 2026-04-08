@@ -10,6 +10,7 @@ use App\Services\SocketService;
 use App\Services\PeliculaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ReservaController extends Controller
 {
@@ -136,6 +137,34 @@ class ReservaController extends Controller
     }
 
     /**
+     * Transfereix els seients reservats temporalment d'un guest a l'usuari autenticat
+     */
+    public function transferirReservesGuest(Request $request)
+    {
+        $validated = $request->validate([
+            'guest_id' => 'required|string|starts_with:guest_',
+        ]);
+
+        try {
+            $usuari = $request->user();
+
+            $actualitzats = SeientSessio::where('guest_id', $validated['guest_id'])
+                ->where('estat', 'reservat')
+                ->update([
+                    'usuari_id' => $usuari->id,
+                    'guest_id' => null,
+                ]);
+
+            return response()->json([
+                'message' => 'Reserves transferides correctament',
+                'updated_count' => $actualitzats,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
      * Crea la reserva final i les línies a la pivot
      */
     public function confirmarCompraFinal(Request $request, SocketService $socketService)
@@ -143,7 +172,7 @@ class ReservaController extends Controller
         $validated = $request->validate([
             'sessio_id' => 'required|integer|exists:sessions_cine,id',
             'usuari_id' => 'required|string',
-            'email' => 'required|email',
+            'email' => 'nullable|email',
             'seients' => 'required|array|min:1',
             'seients.*.id' => 'required|integer|exists:seients_sessio,id',
             'seients.*.tipus_client_id' => 'required|integer|exists:tipus_client,id',
@@ -152,13 +181,21 @@ class ReservaController extends Controller
         ]);
 
         try {
-            return DB::transaction(function () use ($validated, $socketService) {
-                $isGuest = str_starts_with($validated['usuari_id'], 'guest_');
+            $isGuest = str_starts_with($validated['usuari_id'], 'guest_');
+            $finalEmail = $isGuest ? ($validated['email'] ?? null) : null;
+
+            if ($isGuest && !$finalEmail) {
+                throw ValidationException::withMessages([
+                    'email' => 'Cal indicar un correu electrònic vàlid per completar la compra.'
+                ]);
+            }
+
+            return DB::transaction(function () use ($validated, $socketService, $isGuest, $finalEmail) {
 
                 $reserva = Reserva::create([
                     'usuari_id' => $isGuest ? null : intval($validated['usuari_id']),
                     'guest_id' => $isGuest ? $validated['usuari_id'] : null,
-                    'email' => $validated['email'],
+                    'email' => $finalEmail,
                     'sessio_id' => $validated['sessio_id'],
                     'preu_total' => $validated['total'],
                     'estat' => 'confirmada',

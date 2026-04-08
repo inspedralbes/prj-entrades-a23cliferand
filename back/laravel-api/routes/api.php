@@ -43,6 +43,7 @@ Route::get('/reserves/usuario/{usuarioId}/sessio/{sessioId}', [ReservaController
 Route::post('/reserves/seient_reservar', [ReservaController::class, 'reservarSeients']);
 Route::post('/reserves/seient_desocupar', [ReservaController::class, 'desocuparSeients']);
 Route::post('/reserves/confirmar', [ReservaController::class, 'confirmarCompraFinal']);
+Route::post('/reserves/transferir-guest', [ReservaController::class, 'transferirReservesGuest'])->middleware('auth:sanctum');
 
 // Scheduler - Expirar reserves temporals (per cron job)
 Route::post('/seients/expirar-reserves-temporals', [ReservaController::class, 'expirarReservesTemporals']);

@@ -79,6 +79,13 @@ export function logout() {
   return request("/auth/logout", { method: "POST" });
 }
 
+export function transferirReservesGuest(guestId) {
+  return request("/reserves/transferir-guest", {
+    method: "POST",
+    body: JSON.stringify({ guest_id: guestId }),
+  });
+}
+
 // Funcions de normalització per a les dades de la API
 export function normalizePelicula(raw) {
   // Normalizar géneros de forma más clara

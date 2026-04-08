@@ -3,7 +3,6 @@
         <div class="auth-container">
             <div class="auth-card">
                 <h1 class="auth-title">Inicia sessió</h1>
-                <p class="auth-subtitle">Cinema Paradise</p>
 
                 <!-- Missatge d'error -->
                 <div v-if="error" class="alert alert-error">
@@ -46,11 +45,12 @@
 
 <script setup>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
-import { login } from "~/services/communicationManager";
+import { useRouter, useRoute } from "vue-router";
+import { login, transferirReservesGuest } from "~/services/communicationManager";
 import { useGuestStore } from "~/stores/guestStore";
 
 const router = useRouter();
+const route = useRoute();
 const guestStore = useGuestStore();
 
 const form = ref({
@@ -66,6 +66,8 @@ const handleLogin = async () => {
     loading.value = true;
 
     try {
+        // Capturem el guest_id ANTES de fer login (si n'hi ha)
+        const guestIdAbansLogin = guestStore.guestId;
         const response = await login(form.value.email, form.value.password);
 
         // Verificar si la resposta conté el token
@@ -73,11 +75,21 @@ const handleLogin = async () => {
             // Guardem les dades a la base de dades local i al store
             const userId = response.user?.id;
             const nom = response.user?.nom;
+            const email = response.user?.email;
 
-            guestStore.setAuthData(userId, nom, response.token);
+            guestStore.setAuthData(userId, nom, response.token, email);
 
-            // Redirigeix a la pàgina principal
-            router.push("/");
+            // Transferim les reserves del guest al nou usuari autenticat
+            if (guestIdAbansLogin) {
+                try {
+                    await transferirReservesGuest(guestIdAbansLogin);
+                } catch (transferError) {
+                    console.warn("No s'han pogut transferir les reserves del guest", transferError);
+                }
+            }
+
+            const redirectPath = typeof route.query.redirect === "string" ? route.query.redirect : "/";
+            router.push(redirectPath);
         } else if (response.ok === false) {
             error.value =
                 response.error ||

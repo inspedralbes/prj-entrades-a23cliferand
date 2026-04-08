@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGuestStore } from '~/stores/guestStore'
 import { logout } from '~/services/communicationManager'
@@ -41,14 +41,13 @@ const isInAuthPage = computed(() => {
 
 // Funció per tancar sessió
 const handleLogout = () => {
-    guestStore.clearAuthData()
     logout()
+    guestStore.clearAuthData()
     router.push('/')
 }
 
 // Carregar dades de autenticació
 guestStore.loadAuthData()
-})
 </script>
 
 <style scoped>
@@ -68,7 +67,6 @@ guestStore.loadAuthData()
     height: 64px;
 }
 
-/* Logo */
 .navbar_logo {
     display: flex;
     align-items: center;
@@ -105,7 +103,6 @@ guestStore.loadAuthData()
     font-weight: 500;
 }
 
-/* Links */
 .navbar_links {
     display: flex;
     gap: 8px;
