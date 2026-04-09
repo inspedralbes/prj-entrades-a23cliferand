@@ -54,9 +54,6 @@ const { appName } = useAppConstants()
 
 useHead({
   title: `${appName} — Cartellera`,
-  meta: [
-    { name: 'description', content: 'Consulta la cartellera del cinema Cinema Paradise. Compra les teves entrades en línia per les millors pel·lícules.' }
-  ]
 })
 
 const pelicules = ref([])

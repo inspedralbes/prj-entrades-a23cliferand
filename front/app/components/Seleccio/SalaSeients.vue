@@ -18,12 +18,18 @@
         </div>
 
         <div class="seients-info">
+            <output v-if="seientReservant !== null" class="reserva-loading" aria-live="polite">
+                <LoadingSpinner />
+                <span>Reservant seient...</span>
+            </output>
+
             <div v-if="seientSeleccionats.length > 0" class="seleccionats">
                 <h3>Seients seleccionats ({{ seientSeleccionats.length }})</h3>
                 <div class="seients-llistat">
                     <span v-for="seient in seientSeleccionats" :key="seient.id" class="seient-tag">
                         {{ seient.fila }}{{ seient.numero }}
-                        <button type="button" class="eliminar-btn" @click="desseleccionarSeient(seient)">×</button>
+                        <button type="button" class="eliminar-btn" :disabled="seientReservant !== null"
+                            @click="desseleccionarSeient(seient)">×</button>
                     </span>
                 </div>
             </div>
@@ -35,9 +41,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { crearReservaSeient, desocuparSeients, lesMevesReserves } from '~/services/communicationManager'
 import { useGuestStore } from '~/stores/guestStore'
+import LoadingSpinner from '~/components/LoadingSpinner.vue'
 
 const emit = defineEmits(['seients-changed', 'reserva-creada'])
 
@@ -75,6 +82,23 @@ onMounted(async () => {
     }
 });
 
+watch(
+    () => props.seients,
+    (nousSeients) => {
+        const seientsPerId = new Map(nousSeients.map(seient => [seient.id, seient]))
+
+        const seleccioSincronitzada = seientSeleccionats.value
+            .map(seient => seientsPerId.get(seient.id))
+            .filter(seient => seient && seient.estat === 'reservat')
+
+        if (seleccioSincronitzada.length !== seientSeleccionats.value.length) {
+            seientSeleccionats.value = seleccioSincronitzada
+            emit('seients-changed', seientSeleccionats.value)
+        }
+    },
+    { deep: true }
+)
+
 // Per tenir-ho tot ordenat
 function organitzarSeientsPerFila(seientsPlana) {
     const agrupats = {}
@@ -92,6 +116,10 @@ function organitzarSeientsPerFila(seientsPlana) {
 }
 
 function isSeientDisabled(seient) {
+    if (seientReservant.value) {
+        return true
+    }
+
     const esNostre = seientSeleccionats.value.some(s => s.id === seient.id)
     // Si està ocupat al servidor I NO el tenim a la llista local, llavors si que el bloquegem
     return seient.estat !== 'lliure' && !esNostre
@@ -114,6 +142,8 @@ function clasesSeient(seient) {
 }
 
 async function toggleSeient(seient) {
+    if (seientReservant.value) return
+
     const jaTincAquestSeient = seientSeleccionats.value.some(s => s.id === seient.id)
 
     // Si algú altre l'està usant (no és lliure I no està a la nostra pròpia llista), avortem
@@ -160,6 +190,7 @@ function obtenirIdUsuariValid() {
 // Aplica la reserva completada al array local
 function aplicarReservaCompletada(seient, reserva) {
     seient.reserva_id = reserva.id
+    seient.estat = 'reservat'
     seientSeleccionats.value.push(seient)
     emit('reserva-creada', { reserva, seient })
 }
@@ -278,6 +309,10 @@ function desseleccionarSeient(seient) {
     box-shadow: 0 0 12px rgba(232, 39, 46, 0.6);
 }
 
+.seient--reservant {
+    opacity: 0.8;
+}
+
 .seient:disabled:not(.seient--seleccionat) {
     cursor: not-allowed;
 }
@@ -291,6 +326,26 @@ function desseleccionarSeient(seient) {
     background-color: var(--color-surface2);
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
+}
+
+.reserva-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: var(--radius-sm);
+    background-color: rgba(255, 255, 255, 0.06);
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.reserva-loading :deep(.spinner) {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-width: 2px;
+    margin: 0;
 }
 
 .seleccionats h3 {
@@ -331,6 +386,11 @@ function desseleccionarSeient(seient) {
 
 .eliminar-btn:hover {
     opacity: 0.8;
+}
+
+.eliminar-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .preu-total {

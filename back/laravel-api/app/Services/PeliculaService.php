@@ -113,7 +113,7 @@ class PeliculaService
 
     public function syncMovie(string $imdbId): bool
     {
-        $response = Http::timeout(20)->retry(2, 300)->get(env('IMDB_API_URL') . "/titles");
+        $response = Http::timeout(20)->retry(2, 300)->get(env('IMDB_API_URL') . "/{$imdbId}");
 
         if (!$response->successful()) {
             return false;

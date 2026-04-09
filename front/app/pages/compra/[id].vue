@@ -85,7 +85,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getSeientsSessio, getTarifaById, confirmarReservaFinal } from '~/services/communicationManager'
-import { setupSeientsListeners, netejarSeientsListeners } from '~/services/socket'
+import { socket } from '~/services/socket'
 import SalaSeients from '~/components/Seleccio/SalaSeients.vue'
 import Seient from '~/components/Seleccio/Seient.vue'
 import ResumCompra from '~/components/Seleccio/ResumCompra.vue'
@@ -191,6 +191,78 @@ onUnmounted(() => {
     netejarSeientsListeners();
 })
 
+// Sockets
+function setupSeientsListeners(
+    sessioIdParam,
+    seients,
+    onSeatsUpdated,
+    onSeatsReleased,
+) {
+    // Netejar sockets per si de cas
+    socket.off("seats-updated");
+    socket.off("seats-released");
+    socket.off("seat-refresh");
+
+    // Listener per a seients reservats
+    socket.on("seats-updated", (data) => {
+        console.log("Hem rebut actualització!", data);
+
+        // Validació de sessió
+        if (data.session_id == sessioIdParam) {
+            console.log('Sessió actual detectada en seats-updated, actualitzant seients...')
+            recarregarSeients()
+            if (onSeatsUpdated) {
+                onSeatsUpdated(data)
+            }
+        }
+    });
+
+    // Listener per a seients alliberats
+    socket.on("seats-released", (data) => {
+        console.log("Hem rebut alliberació!", data);
+
+        // Validació de sessió
+        if (data.session_id == sessioIdParam) {
+            console.log('Sessió actual detectada en seats-released, actualitzant seients...')
+            recarregarSeients()
+            if (onSeatsReleased) {
+                onSeatsReleased(data)
+            }
+        }
+    });
+
+    // Listener per a actualitzacions de seients
+    socket.on('seat-refresh', (data) => {
+        console.log('Actualització de seients detectada:', data)
+        // Validar si la sessió actual està a la llista d'actualitzacions
+        const sessioIdNum = Number(sessioIdParam)
+        if (data.session_ids && data.session_ids.includes(sessioIdNum)) {
+            console.log('Sessió actual detectada en refresh, actualitzant seients...')
+            // Recarrega els seients de la sessió
+            recarregarSeients()
+        }
+    })
+}
+
+// Neteja els listeners de seients
+function netejarSeientsListeners() {
+    socket.off("seats-updated");
+    socket.off("seats-released");
+    socket.off("seat-refresh");
+}
+
+// Recarrega els seients de la sessió actual
+async function recarregarSeients() {
+    try {
+        const dades = await getSeientsSessio(sessioId)
+        seients.value = dades.seients.flat()
+
+        console.log('Seients actualitzats correctament')
+    } catch (err) {
+        console.error('Error recarregant seients:', err)
+    }
+}
+
 function manejarReservaCreada(data) {
     console.log('Reserva creada:', data.reserva)
 }
@@ -249,14 +321,22 @@ async function finalitzarCompraTotal(dades) {
         const response = await confirmarReservaFinal(body)
 
         if (!response || !response.id) {
-            throw new Error(response?.error || response?.message)
+            let errorMissatge = 'Error desconegut al confirmar la reserva'
+
+            if (response && response.error) {
+                errorMissatge = response.error
+            } else if (response && response.message) {
+                errorMissatge = response.message
+            }
+
+            console.log(errorMissatge)
         }
 
         // Redirigim a la pàgina de confirmació amb l'ID de la reserva
         const reservaId = response.id
         router.push(`/confirmacio/${reservaId}`)
     } catch (err) {
-        errorCompra.value = err?.message || 'Error al finalitzar la compra'
+        errorCompra.value = err && err.message ? err.message : 'Error al finalitzar la compra'
     } finally {
         processant.value = false
     }

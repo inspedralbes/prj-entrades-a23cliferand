@@ -79,9 +79,13 @@ const handleLogin = async () => {
         // Verificar si la resposta conté el token
         if (response.token) {
             // Guardem les dades a la base de dades local i al store
-            const userId = response.user?.id;
-            const nom = response.user?.nom;
-            const email = response.user?.email;
+            let userId, nom, email;
+
+            if (response.user) {
+                userId = response.user.id;
+                nom = response.user.nom;
+                email = response.user.email;
+            }
 
             guestStore.setAuthData(userId, nom, response.token, email);
 
