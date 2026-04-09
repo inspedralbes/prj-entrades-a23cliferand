@@ -29,8 +29,10 @@ services:
       - ./certbot/www:/var/www/certbot
     networks:
       - general
+    depends_on:
+      - tr3-cf-nginx
     # Loop per renovar certificats cada 12h
-    entrypoint: "/bin/sh -c 'trap exit TERM; certbot certonly --webroot --webroot-path /var/www/certbot -d cinema.winewithcola.com --email climentfean@gmail.com --agree-tos --no-eff-email --expand 2>/dev/null || true; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'mkdir -p /var/www/certbot /etc/letsencrypt && trap exit TERM; certbot certonly --webroot --webroot-path /var/www/certbot -d cinema.winewithcola.com --email climentfean@gmail.com --agree-tos --no-eff-email --expand 2>/dev/null || true; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
   # Backend Laravel
   tr3-cf-laravel-api:
@@ -94,8 +96,8 @@ services:
   tr3-cf-redis:
     image: redis:7-alpine
     container_name: tr3-cf-redis
-    ports:
-      - 6379:6379
+    # ports:
+    #   - 6379:6379
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}

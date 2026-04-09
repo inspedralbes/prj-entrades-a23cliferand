@@ -88,7 +88,8 @@ class PeliculaService
 
     public function fetchFromApi(string $imdbId): ?array
     {
-        $response = Http::get("https://imdbapi.dev/api/v1/title/{$imdbId}");
+        $baseUrl = rtrim((string) config('services.imdb.base_url'), '/');
+        $response = Http::timeout(20)->retry(2, 300)->get($baseUrl . "/{$imdbId}");
 
         if (!$response->successful()) {
             return null;
@@ -113,8 +114,12 @@ class PeliculaService
 
     public function syncMovie(string $imdbId): bool
     {
-        $response = Http::timeout(20)->retry(2, 300)->get(env('IMDB_API_URL') . "/{$imdbId}");
+        error_log("Sincronizando película: {$imdbId}");
+        $baseUrl = rtrim((string) config('services.imdb.base_url'), '/');
+        error_log($baseUrl . "/{$imdbId}");
+        $response = Http::timeout(20)->retry(2, 300)->get($baseUrl . "/{$imdbId}");
 
+        error_log("Respuesta de la API para {$imdbId}: " . $response->body());
         if (!$response->successful()) {
             return false;
         }

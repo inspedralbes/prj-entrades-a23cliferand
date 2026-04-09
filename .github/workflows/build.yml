@@ -54,7 +54,7 @@ jobs:
             echo "DB_USERNAME=postgres" >> .env
             echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
             echo "CONFIG REDIS"
-            echo "REDIS_CLIENT=predis"
+            echo "REDIS_CLIENT=predis" >> .env
             echo "REDIS_HOST=tr3-cf-redis" >> .env
             echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
             echo "REDIS_PORT=6379" >> .env
@@ -68,8 +68,8 @@ jobs:
 
             echo "Configurant fitxer .env de frontend..."
             cd ./front
-            echo "VITE_API_URL=http://cinema.winewithcola.com/back/api" > .env
-            echo "VITE_SOCKET_URL=http://cinema.winewithcola.com/node" >> .env
+            echo "VITE_API_URL=https://cinema.winewithcola.com/back/api" > .env
+            echo "VITE_SOCKET_URL=https://cinema.winewithcola.com" >> .env
             cd ..
 
             echo "Configuració completada."
@@ -77,5 +77,5 @@ jobs:
             docker compose -f compose.PROD.yml up -d --build
 
             echo "Desplegem finalitzat amb èxit!"
-  
+
           EOF

@@ -11,7 +11,7 @@ class SocketService
 
     public function __construct()
     {
-        $this->socketUrl = env('SOCKET_SERVER_URL');
+        $this->socketUrl = rtrim((string) config('services.socket.server_url'), '/');
     }
     /**
      * Envia un missatge de reserva de seients al servidor de sockets.
