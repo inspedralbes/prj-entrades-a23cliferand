@@ -91,12 +91,7 @@ const errorSessions = ref(null)
 
 useHead({
   title: computed(() => pelicula.value ? `${pelicula.value.titol} — ${appName}` : appName),
-  meta: [
-    {
-      name: 'description',
-      content: computed(() => pelicula.value?.sinopsi ?? 'Detalls i sessions de la pel·lícula')
-    }
-  ]
+
 })
 
 onMounted(async () => {
@@ -138,6 +133,13 @@ function setupSocketListeners() {
       recarregarSessions()
     }
   })
+  socket.on('seat-refresh', (data) => {
+    console.log('Actualització de seients detectada:', data)
+    const primeraSessioId = sessions.value.length > 0 ? sessions.value[0].id : null
+    if (primeraSessioId !== null && data.session_ids.includes(primeraSessioId)) {
+      recarregarSessions()
+    }
+  })
 }
 
 
@@ -152,6 +154,7 @@ async function recarregarSessions() {
 onUnmounted(() => {
   socket.off('seats-updated')
   socket.off('seats-released')
+  socket.off('seat-refresh')
 })
 
 const diesDisponibles = computed(() => {

@@ -141,9 +141,12 @@ const handleRegister = async () => {
         // Verificar si el registre ha anat bé
         if (response.token) {
             // Si ja retorna token, significa que s'ha registrat i autenticat
-            const userId = response.user?.id;
-            const nom = response.user?.nom;
-            const email = response.user?.email;
+            let userId, nom, email;
+            if (response.user) {
+                userId = response.user.id;
+                nom = response.user.nom;
+                email = response.user.email;
+            }
 
             guestStore.setAuthData(userId, nom, response.token, email);
 

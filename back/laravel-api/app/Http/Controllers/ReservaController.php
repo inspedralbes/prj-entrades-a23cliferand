@@ -292,24 +292,31 @@ class ReservaController extends Controller
     }
 
     /**
-     * Expira les reserves temporals
+     * Expira les reserves temporals i retorna les sessions on han expirat seients
      */
     public function expirarReservesTemporals()
     {
         try {
             $seients = SeientSessio::where('estat', 'reservat')
                 ->where('reservat_at', '<', now()->subMinutes(5))
-                ->get();
+                ->get(['id', 'sessio_id']);
 
-            foreach ($seients as $seient) {
-                $seient->update([
-                    'estat' => 'lliure',
-                    'reservat_at' => null,
-                    'usuari_id' => null,
-                    'guest_id' => null
-                ]);
+            $sessionIds = $seients->pluck('sessio_id')->unique()->values()->all();
+
+            if ($seients->isNotEmpty()) {
+                SeientSessio::whereIn('id', $seients->pluck('id'))
+                    ->update([
+                        'estat' => 'lliure',
+                        'reservat_at' => null,
+                        'usuari_id' => null,
+                        'guest_id' => null
+                    ]);
             }
-            return response()->json(['message' => 'Bloquejos expirats'], 200);
+
+            return response()->json([
+                'message' => 'Bloquejos expirats',
+                'session_ids' => $sessionIds
+            ], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }

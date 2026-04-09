@@ -29,7 +29,7 @@ class PeliculaService
             }
 
             $data = Redis::hgetall($actualKey);
-            
+
             if ($data && is_array($data) && count($data) > 0) {
                 if (array_keys($data) !== range(0, count($data) - 1)) {
                     $movie = $data;
@@ -41,7 +41,7 @@ class PeliculaService
                         }
                     }
                 }
-                
+
                 if (!empty($movie)) {
                     $movies[] = $movie;
                 }
@@ -113,7 +113,7 @@ class PeliculaService
 
     public function syncMovie(string $imdbId): bool
     {
-        $response = Http::timeout(20)->retry(2, 300)->get("https://api.imdbapi.dev/titles/{$imdbId}");
+        $response = Http::timeout(20)->retry(2, 300)->get(env('IMDB_API_URL') . "/{$imdbId}");
 
         if (!$response->successful()) {
             return false;
@@ -200,9 +200,9 @@ class PeliculaService
         ];
 
         $key = "pelicula:{$imdbId}";
-        
+
         $dataCreacio = Redis::hget($key, 'data_creacio');
-        
+
         $payload['data_sync'] = now()->toDateTimeString();
         $payload['data_creacio'] = $dataCreacio ?: now()->toDateTimeString();
 
@@ -332,7 +332,7 @@ class PeliculaService
         }
 
         if (strlen($body) > 5 * 1024 * 1024) {
-            return [null, null]; 
+            return [null, null];
         }
 
         $mime = $img->header('Content-Type') ?: 'application/octet-stream';

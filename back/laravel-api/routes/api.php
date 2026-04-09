@@ -28,24 +28,55 @@ Route::get('/user', function (Request $request) {
 Route::post('/pelicules/sync/all', [PeliculaController::class, 'syncAll']);
 Route::post('/pelicules/sync/{imdbId}', [PeliculaController::class, 'syncSingle']);
 
-// CRUD Routes
-Route::apiResource('usuaris', UsuariController::class);
-Route::apiResource('pelicules', PeliculaController::class);
-Route::apiResource('reserves', ReservaController::class);
+// CRUD Routes - USUARIS
+Route::get('/usuaris', [UsuariController::class, 'index']);
+Route::get('/usuaris/{id}', [UsuariController::class, 'show']);
+Route::post('/usuaris', [UsuariController::class, 'store'])->middleware('auth:sanctum');
+Route::put('/usuaris/{id}', [UsuariController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/usuaris/{id}', [UsuariController::class, 'destroy'])->middleware('auth:sanctum');
+
+// CRUD Routes - PELICULES
+Route::get('/pelicules', [PeliculaController::class, 'index']);
+Route::get('/pelicules/{id}', [PeliculaController::class, 'show']);
+Route::post('/pelicules', [PeliculaController::class, 'store'])->middleware('auth:sanctum');
+Route::put('/pelicules/{id}', [PeliculaController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/pelicules/{id}', [PeliculaController::class, 'destroy'])->middleware('auth:sanctum');
+
+// CRUD Routes - RESERVES (sin auth para permitir guests)
+Route::get('/reserves', [ReservaController::class, 'index']);
+Route::get('/reserves/{id}', [ReservaController::class, 'show']);
+Route::post('/reserves', [ReservaController::class, 'store']);
+Route::put('/reserves/{id}', [ReservaController::class, 'update']);
+Route::delete('/reserves/{id}', [ReservaController::class, 'destroy']);
+
+// CRUD Routes - SESSIONS
+Route::get('/sessions', [SessioController::class, 'index']);
+Route::get('/sessions/{id}', [SessioController::class, 'show']);
 Route::get('/sessions/pelicula/{peliculaId}', [SessioController::class, 'getByPelicula']);
-Route::apiResource('sessions', SessioController::class);
-Route::apiResource('sales', SalaController::class);
-Route::apiResource('tarifes', TarifaController::class);
+Route::post('/sessions', [SessioController::class, 'store'])->middleware('auth:sanctum');
+Route::put('/sessions/{id}', [SessioController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/sessions/{id}', [SessioController::class, 'destroy'])->middleware('auth:sanctum');
+
+// CRUD Routes - SALES
+Route::get('/sales', [SalaController::class, 'index']);
+Route::get('/sales/{id}', [SalaController::class, 'show']);
+Route::post('/sales', [SalaController::class, 'store'])->middleware('auth:sanctum');
+Route::put('/sales/{id}', [SalaController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/sales/{id}', [SalaController::class, 'destroy'])->middleware('auth:sanctum');
+
+// CRUD Routes - TARIFES
+Route::get('/tarifes', [TarifaController::class, 'index']);
+Route::get('/tarifes/{id}', [TarifaController::class, 'show']);
+Route::post('/tarifes', [TarifaController::class, 'store'])->middleware('auth:sanctum');
+Route::put('/tarifes/{id}', [TarifaController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/tarifes/{id}', [TarifaController::class, 'destroy'])->middleware('auth:sanctum');
 
 // Reserves
 Route::get('/sessions/{sessioId}/seients', [ReservaController::class, 'getSeientsSessio']);
-Route::get('/reserves/usuari/{usuariId}/sessio/{sessioId}', [ReservaController::class, 'lesMevesReserves'])
-    ->where('usuariId', '.*');
+Route::get('/reserves/usuari/{usuariId}/sessio/{sessioId}', [ReservaController::class, 'lesMevesReserves'])->where('usuariId', '.*');
 Route::post('/reserves/seient_reservar', [ReservaController::class, 'reservarSeients']);
 Route::post('/reserves/seient_desocupar', [ReservaController::class, 'desocuparSeients']);
 Route::post('/reserves/confirmar', [ReservaController::class, 'confirmarCompraFinal']);
 Route::post('/reserves/transferir-guest', [ReservaController::class, 'transferirReservesGuest'])->middleware('auth:sanctum');
-
-// Scheduler - Expirar reserves temporals (per cron job)
-Route::post('/seients/expirar-reserves-temporals', [ReservaController::class, 'expirarReservesTemporals']);
+Route::post('/reserves/expirar', [ReservaController::class, 'expirarReservesTemporals']);
 
