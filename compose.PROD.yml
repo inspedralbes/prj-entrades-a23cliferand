@@ -96,8 +96,8 @@ services:
   tr3-cf-redis:
     image: redis:7-alpine
     container_name: tr3-cf-redis
-    ports:
-      - 6379:6379
+    # ports:
+    #   - 6379:6379
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
