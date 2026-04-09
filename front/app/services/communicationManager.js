@@ -191,10 +191,10 @@ export async function getSessionsAll() {
   return Array.isArray(data) ? data.map(normalizeSessio) : [];
 }
 
-// Filtra sessions per pel·lícula al client
+// Obté les sessions per a una pel·lícula específica
 export async function getSessionsByPelicula(peliculaId) {
-  const totes = await getSessionsAll();
-  return totes.filter((s) => String(s.peliculaId) === String(peliculaId));
+  const data = await request(`/sessions/pelicula/${peliculaId}`);
+  return Array.isArray(data) ? data.map(normalizeSessio) : [];
 }
 
 // Retorna una sessió per ID, normalitzada
@@ -287,8 +287,8 @@ export async function desocuparSeients(sessioId, seientIds) {
 }
 
 // Obté les reserves de l'usuari per a una sessió específica
-export async function lesMevesReserves(usuarioId, sessioId) {
-  return request(`/reserves/usuario/${usuarioId}/sessio/${sessioId}`);
+export async function lesMevesReserves(usuariId, sessioId) {
+  return request(`/reserves/usuari/${usuariId}/sessio/${sessioId}`);
 }
 
 // Usuaris

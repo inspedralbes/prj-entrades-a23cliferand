@@ -318,16 +318,16 @@ class ReservaController extends Controller
     /**
      * Obté les reserves d'un usuari per a una sessió
      */
-    public function lesMevesReserves($usuarioId, $sessioId)
+    public function lesMevesReserves($usuariId, $sessioId)
     {
         try {
-            $isGuest = str_starts_with($usuarioId, 'guest_');
+            $isGuest = str_starts_with($usuariId, 'guest_');
             $seients = SeientSessio::where('sessio_id', $sessioId)
-                ->where(function ($q) use ($usuarioId, $isGuest) {
+                ->where(function ($q) use ($usuariId, $isGuest) {
                     if ($isGuest)
-                        $q->where('guest_id', $usuarioId);
+                        $q->where('guest_id', $usuariId);
                     else
-                        $q->where('usuari_id', intval($usuarioId));
+                        $q->where('usuari_id', intval($usuariId));
                 })
                 ->where('estat', 'reservat')
                 ->get();

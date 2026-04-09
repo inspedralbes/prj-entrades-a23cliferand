@@ -71,10 +71,16 @@ import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { register, transferirReservesGuest } from "~/services/communicationManager";
 import { useGuestStore } from "~/stores/guestStore";
+import { useAppConstants } from "~/composables/useAppConstants";
 
 const router = useRouter();
 const route = useRoute();
 const guestStore = useGuestStore();
+const { appName } = useAppConstants();
+
+useHead({
+    title: `Registra't | ${appName}`,
+})
 
 const form = ref({
     nom: "",

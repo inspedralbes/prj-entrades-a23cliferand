@@ -77,9 +77,11 @@ import { socket } from '~/services/socket'
 import SessioCard from '~/components/InfoPeli/SessioCard.vue'
 import DiaTab from '~/components/InfoPeli/DiaTab.vue'
 import Metadades from '~/components/InfoPeli/Metadades.vue'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 const route = useRoute()
 const id = route.params.id
+const { appName } = useAppConstants()
 
 const pelicula = ref(null)
 const sessions = ref([])
@@ -88,7 +90,7 @@ const carregantSessions = ref(true)
 const errorSessions = ref(null)
 
 useHead({
-  title: computed(() => pelicula.value ? `${pelicula.value.titol} — Cinema Paradise` : 'Cinema Paradise'),
+  title: computed(() => pelicula.value ? `${pelicula.value.titol} — ${appName}` : appName),
   meta: [
     {
       name: 'description',

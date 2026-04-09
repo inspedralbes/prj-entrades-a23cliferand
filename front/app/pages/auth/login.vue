@@ -48,10 +48,12 @@ import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { login, transferirReservesGuest } from "~/services/communicationManager";
 import { useGuestStore } from "~/stores/guestStore";
+import { useAppConstants } from "~/composables/useAppConstants";
 
 const router = useRouter();
 const route = useRoute();
 const guestStore = useGuestStore();
+const { appName } = useAppConstants()
 
 const form = ref({
     email: "",
@@ -60,6 +62,10 @@ const form = ref({
 
 const loading = ref(false);
 const error = ref("");
+
+useHead({
+    title: `Login | ${appName}`,
+})
 
 const handleLogin = async () => {
     error.value = "";

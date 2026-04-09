@@ -32,14 +32,15 @@ Route::post('/pelicules/sync/{imdbId}', [PeliculaController::class, 'syncSingle'
 Route::apiResource('usuaris', UsuariController::class);
 Route::apiResource('pelicules', PeliculaController::class);
 Route::apiResource('reserves', ReservaController::class);
+Route::get('/sessions/pelicula/{peliculaId}', [SessioController::class, 'getByPelicula']);
 Route::apiResource('sessions', SessioController::class);
 Route::apiResource('sales', SalaController::class);
 Route::apiResource('tarifes', TarifaController::class);
 
 // Reserves
 Route::get('/sessions/{sessioId}/seients', [ReservaController::class, 'getSeientsSessio']);
-Route::get('/reserves/usuario/{usuarioId}/sessio/{sessioId}', [ReservaController::class, 'lesMevesReserves'])
-    ->where('usuarioId', '.*');
+Route::get('/reserves/usuari/{usuariId}/sessio/{sessioId}', [ReservaController::class, 'lesMevesReserves'])
+    ->where('usuariId', '.*');
 Route::post('/reserves/seient_reservar', [ReservaController::class, 'reservarSeients']);
 Route::post('/reserves/seient_desocupar', [ReservaController::class, 'desocuparSeients']);
 Route::post('/reserves/confirmar', [ReservaController::class, 'confirmarCompraFinal']);

@@ -48,9 +48,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getPeliculesAll } from '~/services/communicationManager'
+import { useAppConstants } from '~/composables/useAppConstants'
+
+const { appName } = useAppConstants()
 
 useHead({
-  title: 'Cinema Paradise — Cartellera',
+  title: `${appName} — Cartellera`,
   meta: [
     { name: 'description', content: 'Consulta la cartellera del cinema Cinema Paradise. Compra les teves entrades en línia per les millors pel·lícules.' }
   ]

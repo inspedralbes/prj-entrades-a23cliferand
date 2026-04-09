@@ -62,8 +62,8 @@ const seientsPerFila = computed(() => {
 // Carrega les reserves des del servidor en la primera visita
 onMounted(async () => {
     try {
-        const usuarioId = obtenirIdUsuariValid()
-        const reserves = usuarioId ? await lesMevesReserves(usuarioId, props.sessioId) : []
+        const usuariId = obtenirIdUsuariValid()
+        const reserves = usuariId ? await lesMevesReserves(usuariId, props.sessioId) : []
 
         if (reserves.length > 0) {
             seientSeleccionats.value = reserves
