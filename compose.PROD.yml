@@ -102,6 +102,18 @@ services:
     networks:
       - general
 
+  tr3-cf-portainer:
+    image: portainer/portainer-ce:sts
+    container_name: tr3-cf-portainer
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - 9443:9443
+    networks:
+      - general
+
 volumes:
   postgres-bd:
   redis_data:
