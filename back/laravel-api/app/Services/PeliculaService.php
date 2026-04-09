@@ -113,8 +113,10 @@ class PeliculaService
 
     public function syncMovie(string $imdbId): bool
     {
+        error_log("Sincronizando película: {$imdbId}");
         $response = Http::timeout(20)->retry(2, 300)->get(env('IMDB_API_URL') . "/{$imdbId}");
 
+        error_log("Respuesta de la API para {$imdbId}: " . $response->body());
         if (!$response->successful()) {
             return false;
         }
