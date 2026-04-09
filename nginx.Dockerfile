@@ -1,11 +1,11 @@
-# Stage 1: Build the Next application
-FROM node:20 AS build-stage
+# Stage 1: Build the Vue.js application
+FROM node:24 AS build-stage
 WORKDIR /app
 COPY front/package.json ./
 RUN npm install
 COPY front/ ./
 COPY ./nginx.conf /app/nginx.conf
-RUN npm run build
+RUN npm run generate
 
 # Stage 2: Serve the application with Nginx
 FROM nginx:alpine
