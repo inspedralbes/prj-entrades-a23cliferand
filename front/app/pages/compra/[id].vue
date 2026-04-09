@@ -4,7 +4,7 @@
         <div class="compra-header">
             <div class="container compra-header_content">
                 <a @click.prevent="$router.back()" href="#" class="compra-back">
-                    ← Tornar Enrera
+                    ← Tornar Info Pelicula
                 </a>
                 <h1 v-if="sessio" class="section-titol">
                     Selecciona els teus seients
@@ -15,7 +15,7 @@
         <!-- Contingut principal -->
         <div class="container compra-main">
             <div v-if="carregant" class="carregant">
-                <div class="spinner" />
+                <LoadingSpinner />
                 <p>Carregant seients...</p>
             </div>
 
@@ -69,8 +69,13 @@
                 </div>
 
                 <!-- Resum de compra -->
+                <div v-if="errorCompra" class="api-error">
+                    <p>{{ errorCompra }}</p>
+                </div>
                 <ResumCompra v-if="pas === 2" :seients="seientSeleccionats" :preus-tarifa="infoTarifa.preus"
-                    :default-preu="tarifaDefault" @enrere="pas = 1" @completat="finalitzarCompraTotal" />
+                    :default-preu="tarifaDefault" :is-authenticated="isAuthenticated" :usuari-nom="guestStore.nom"
+                    :usuari-email="guestStore.email" @enrere="pas = 1" @anar-login="anarALogin"
+                    @anar-registre="anarARegistre" @completat="finalitzarCompraTotal" />
 
             </div>
         </div>
@@ -84,11 +89,15 @@ import { setupSeientsListeners, netejarSeientsListeners } from '~/services/socke
 import SalaSeients from '~/components/Seleccio/SalaSeients.vue'
 import Seient from '~/components/Seleccio/Seient.vue'
 import ResumCompra from '~/components/Seleccio/ResumCompra.vue'
+import LoadingSpinner from '~/components/LoadingSpinner.vue'
 import { useGuestStore } from '~/stores/guestStore'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 const route = useRoute()
 const router = useRouter()
 const sessioId = route.params.id
+const guestStore = useGuestStore()
+const { appName } = useAppConstants()
 
 const pas = ref(1) // 1: Seients, 2: Resum
 const sessio = ref(null)
@@ -97,13 +106,14 @@ const seientSeleccionats = ref([])
 const carregant = ref(true)
 const processant = ref(false)
 const error = ref(null)
+const errorCompra = ref('')
 
-const usuariId = ref(null)
 const tarifaDefault = ref(10)
 const infoTarifa = ref(null)
+const isAuthenticated = computed(() => guestStore.isAuthenticated())
 
 useHead({
-    title: 'Entrades'
+    title: `Entrades | ${appName}`
 })
 
 const totalAproximat = computed(() => {
@@ -111,6 +121,11 @@ const totalAproximat = computed(() => {
 })
 
 onMounted(async () => {
+    guestStore.loadAuthData()
+    guestStore.initGuest()
+
+    const queryResumRedirect = Number.parseInt(route.query.pas) === 2
+
     try {
         const dades = await getSeientsSessio(sessioId)
 
@@ -118,7 +133,7 @@ onMounted(async () => {
             id: dades.sessio_id,
             sala_id: dades.sala_id,
             sala_nom: dades.sala_nom,
-            tarifa_id: dades.tarifa_id || 1, // Ens cal l'ID per buscar els preus
+            tarifa_id: dades.tarifa_id || 1,
             tarifa_nom: dades.tarifa_nom,
             pelicula_nom: dades.pelicula_nom,
             data_hora: dades.data_hora
@@ -132,9 +147,21 @@ onMounted(async () => {
         const tarifaId = dades.tarifa_id || 1
         infoTarifa.value = await getTarifaById(tarifaId)
 
-        const token = localStorage.getItem('auth_token')
-        if (token) {
-            usuariId.value = localStorage.getItem('usuari_id')
+        // Si entra amb ?pas=2, intenta carregar els seients desde el servidor
+        if (queryResumRedirect) {
+            const usuariId = guestStore.getIdentifier()
+            if (usuariId) {
+                const { lesMevesReserves } = await import('~/services/communicationManager')
+                const seientsDelServidor = await lesMevesReserves(usuariId, sessioId)
+                if (seientsDelServidor.length > 0) {
+                    seientSeleccionats.value = seientsDelServidor
+                    pas.value = 2
+                } else {
+                    pas.value = 1
+                }
+            } else {
+                pas.value = 1
+            }
         }
 
     } catch (err) {
@@ -168,16 +195,44 @@ function manejarReservaCreada(data) {
     console.log('Reserva creada:', data.reserva)
 }
 
+function anarALogin() {
+    router.push({
+        path: '/auth/login',
+        query: {
+            redirect: `/compra/${sessioId}?pas=2`
+        }
+    })
+}
+
+function anarARegistre() {
+    router.push({
+        path: '/auth/register',
+        query: {
+            redirect: `/compra/${sessioId}?pas=2`
+        }
+    })
+}
+
 function anarAResum() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     pas.value = 2
 }
 
 async function finalitzarCompraTotal(dades) {
+    errorCompra.value = ''
     processant.value = true
     try {
-        const guestStore = useGuestStore()
-        const usuariIdIdent = guestStore.getIdentifier()
+        let usuariIdIdent = guestStore.getIdentifier()
+
+        if (!usuariIdIdent) {
+            guestStore.loadAuthData()
+            guestStore.initGuest()
+            usuariIdIdent = guestStore.getIdentifier()
+        }
+
+        if (!usuariIdIdent) {
+            throw new Error('No s\'ha pogut identificar l\'usuari per completar la compra')
+        }
 
         const body = {
             sessio_id: sessioId,
@@ -193,11 +248,15 @@ async function finalitzarCompraTotal(dades) {
 
         const response = await confirmarReservaFinal(body)
 
+        if (!response || !response.id) {
+            throw new Error(response?.error || response?.message)
+        }
+
         // Redirigim a la pàgina de confirmació amb l'ID de la reserva
         const reservaId = response.id
         router.push(`/confirmacio/${reservaId}`)
     } catch (err) {
-        alert('Error al finalitzar la compra: ' + err.message)
+        errorCompra.value = err?.message || 'Error al finalitzar la compra'
     } finally {
         processant.value = false
     }
@@ -265,16 +324,6 @@ function formatPreu(preu) {
 .carregant {
     text-align: center;
     padding: 4rem 2rem;
-}
-
-.spinner {
-    width: 3rem;
-    height: 3rem;
-    border: 4px solid var(--color-border);
-    border-top: 4px solid var(--color-accent);
-    border-radius: 50%;
-    margin: 0 auto 1rem;
-    animation: spin 1s linear infinite;
 }
 
 .avis-temporal {
@@ -375,16 +424,6 @@ function formatPreu(preu) {
 .resum-breu .separador {
     color: var(--color-border);
     margin: 0 0.5rem;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
 }
 
 @media (max-width: 640px) {

@@ -12,24 +12,16 @@ class UsuariSeeder extends Seeder
     {
         $usuaris = [
             [
-                'nom' => 'Usuari de Prova',
-                'email' => 'test@example.com',
-                'password' => Hash::make('password'),
-            ],
-            [
-                'nom' => 'Joan García',
-                'email' => 'joan@example.com',
-                'password' => Hash::make('password'),
-            ],
-            [
                 'nom' => 'Maria López',
-                'email' => 'maria@example.com',
-                'password' => Hash::make('password'),
+                'email' => 'client@client.com',
+                'password' => Hash::make('Jupiter1'),
+                'rol' => 'client',
             ],
             [
                 'nom' => 'Admin',
                 'email' => 'admin@admin.com',
                 'password' => Hash::make('Jupiter1'),
+                'rol' => 'admin',
             ],
         ];
 
