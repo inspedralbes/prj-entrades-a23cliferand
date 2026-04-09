@@ -1,7 +1,8 @@
 <template>
     <div class="confirmacio-container">
         <div class="confirmacio-content">
-            <div v-if="cargant" class="cargant">
+            <div v-if="carregant" class="carregant">
+                <LoadingSpinner />
                 <p>Carregant informació de la comanda...</p>
             </div>
 
@@ -70,9 +71,16 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getReservaById } from '~/services/communicationManager'
+import LoadingSpinner from '~/components/LoadingSpinner.vue'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 const route = useRoute()
-const cargant = ref(true)
+const { appName } = useAppConstants()
+const carregant = ref(true)
+
+useHead({
+    title: `Confirmació | ${appName}`
+})
 const reservaId = ref(null)
 const email = ref('')
 const seients = ref([])
@@ -85,7 +93,7 @@ onMounted(async () => {
         const id = route.params.id
 
         if (!id) {
-            cargant.value = false
+            carregant.value = false
             return
         }
 
@@ -115,7 +123,7 @@ onMounted(async () => {
     } catch (err) {
         console.error('Error:', err)
     } finally {
-        cargant.value = false
+        carregant.value = false
     }
 })
 
@@ -299,7 +307,7 @@ function formatPreu(preu) {
     box-shadow: var(--shadow-lg);
 }
 
-.cargant {
+.carregant {
     padding: 2rem;
     text-align: center;
     color: var(--color-text-secondary);

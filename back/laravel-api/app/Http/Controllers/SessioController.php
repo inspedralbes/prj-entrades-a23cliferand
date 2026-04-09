@@ -97,6 +97,21 @@ class SessioController extends Controller
     }
 
     /**
+     * Obté les sessions d'una pel·lícula específica amb dades d'ocupació.
+     */
+    public function getByPelicula($peliculaId)
+    {
+        $sessions = Sessio::where('pellicula_id', $peliculaId)
+            ->with('sala', 'seientsSessio')
+            ->get()
+            ->map(function ($sessio) {
+                return $this->sessionWithOccupancy($sessio);
+            });
+
+        return response()->json($sessions, 200);
+    }
+
+    /**
      * Formatea una sessió amb informació d'ocupació.
      */
     private function sessionWithOccupancy($sessio)
@@ -116,7 +131,7 @@ class SessioController extends Controller
             'pellicula_id' => $sessio->pellicula_id,
             'sala_id' => $sessio->sala_id,
             'tarifa_id' => $sessio->tarifa_id,
-            'data_hora' => $sessio->data_hora,
+            'data_hora' => $sessio->data_hora->format('Y-m-d H:i:s'),
             'created_at' => $sessio->created_at,
             'updated_at' => $sessio->updated_at,
             'sala' => $sessio->sala,

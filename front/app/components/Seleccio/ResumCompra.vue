@@ -32,17 +32,43 @@
         </div>
 
         <div class="resum-final">
-            <div class="camp-grup">
+            <div v-if="!isAuthenticated" class="camp-grup">
                 <label for="email">Correu electrònic per rebre les entrades:</label>
                 <input type="email" id="email" v-model="email" placeholder="el-teu@email.com" class="input-email"
                     required />
             </div>
 
+            <div v-else class="compra-auth-ok">
+                <strong>Compraràs amb el teu compte iniciat.</strong>
+                <div class="info-usuari">
+                    <p v-if="usuariNom" class="info-fila">
+                        <span class="info-label">Nom:</span>
+                        <span class="info-valor">{{ usuariNom }}</span>
+                    </p>
+                    <p v-if="usuariEmail" class="info-fila">
+                        <span class="info-label">Email:</span>
+                        <span class="info-valor">{{ usuariEmail }}</span>
+                    </p>
+                </div>
+            </div>
+
+            <div v-if="!isAuthenticated" class="compra-auth-opcio">
+                <span>O compra directament amb el teu compte.</span>
+                <div class="auth-botones">
+                    <button type="button" class="btn btn-enrere" @click="$emit('anar-login')">
+                        Inicia sessió
+                    </button>
+                    <button type="button" class="btn btn-enrere" @click="$emit('anar-registre')">
+                        Registra't
+                    </button>
+                </div>
+            </div>
+
             <div class="accions-finals">
-                <button type="button" @click="$emit('enrere')" class="btn btn-secondary">
+                <button type="button" @click="$emit('enrere')" class="btn btn-enrere">
                     Canviar seients
                 </button>
-                <button type="button" @click="finalitzarCompra" :disabled="!isEmailValid || processant"
+                <button type="button" @click="finalitzarCompra" :disabled="!canPurchase || processant"
                     class="btn btn-primary btn-comprar">
                     {{ processant ? 'Processant...' : 'Confirmar i Comprar' }}
                 </button>
@@ -66,10 +92,22 @@ const props = defineProps({
     defaultPreu: {
         type: Number,
         default: 0
+    },
+    isAuthenticated: {
+        type: Boolean,
+        default: false
+    },
+    usuariNom: {
+        type: String,
+        default: null
+    },
+    usuariEmail: {
+        type: String,
+        default: null
     }
 })
 
-const emit = defineEmits(['enrere', 'completat'])
+const emit = defineEmits(['enrere', 'completat', 'anar-login', 'anar-registre'])
 
 const email = ref('')
 const processant = ref(false)
@@ -86,7 +124,7 @@ onMounted(() => {
 function actualitzarPreu(seient) {
     const preuTrobat = props.preusTarifa.find(p => p.tipus_client_id === seient.tipus_client_id)
     if (preuTrobat) {
-        seient.preu_aplicat = parseFloat(preuTrobat.preu)
+        seient.preu_aplicat = Number.parseFloat(preuTrobat.preu)
     } else {
         seient.preu_aplicat = props.defaultPreu
     }
@@ -101,17 +139,21 @@ const isEmailValid = computed(() => {
     return re.test(email.value)
 })
 
+const canPurchase = computed(() => {
+    return props.seients.length > 0 && (props.isAuthenticated || isEmailValid.value)
+})
+
 function formatPreu(preu) {
     return new Intl.NumberFormat('ca-ES', { style: 'currency', currency: 'EUR' }).format(preu)
 }
 
 function finalitzarCompra() {
-    if (!isEmailValid.value) return
+    if (!canPurchase.value) return
 
     processant.value = true
     // Emetem tota la informació necessària per finalitzar la compra al servidor
     emit('completat', {
-        email: email.value,
+        email: props.isAuthenticated ? '' : email.value,
         seients: props.seients,
         total: total.value
     })
@@ -225,13 +267,57 @@ function finalitzarCompra() {
     color: var(--color-text);
 }
 
-.input-email {
-    padding: 0.8rem 1rem;
+.compra-auth-ok {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
     background: var(--color-surface);
+}
+
+.compra-auth-ok strong {
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.info-usuari {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-fila {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--color-muted);
+    min-width: 60px;
+}
+
+.info-valor {
     color: var(--color-text);
-    font-size: 1.1rem;
+    word-break: break-all;
+}
+
+.compra-auth-opcio {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.auth-botones {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
 }
 
 .accions-finals {
@@ -244,6 +330,13 @@ function finalitzarCompra() {
     flex: 2;
     font-size: 1.2rem;
     padding: 1rem;
+}
+
+.btn-enrere {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    transition: background-color var(--transition);
 }
 
 @media (max-width: 768px) {

@@ -71,14 +71,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { getPeliculesById, getSessionsByPelicula } from '~/services/communicationManager'
+import { socket } from '~/services/socket'
 import SessioCard from '~/components/InfoPeli/SessioCard.vue'
 import DiaTab from '~/components/InfoPeli/DiaTab.vue'
 import Metadades from '~/components/InfoPeli/Metadades.vue'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 const route = useRoute()
 const id = route.params.id
+const { appName } = useAppConstants()
 
 const pelicula = ref(null)
 const sessions = ref([])
@@ -87,7 +90,7 @@ const carregantSessions = ref(true)
 const errorSessions = ref(null)
 
 useHead({
-  title: computed(() => pelicula.value ? `${pelicula.value.titol} — Cinema Paradise` : 'Cinema Paradise'),
+  title: computed(() => pelicula.value ? `${pelicula.value.titol} — ${appName}` : appName),
   meta: [
     {
       name: 'description',
@@ -101,7 +104,7 @@ onMounted(async () => {
   try {
     pelicula.value = await getPeliculesById(id)
   } catch (e) {
-    console.error('[pelicula/id] Error carregant pel·lícula:', e)
+    console.error('Error carregant pel·lícula:', e)
   } finally {
     carregant.value = false
   }
@@ -114,6 +117,41 @@ onMounted(async () => {
   } finally {
     carregantSessions.value = false
   }
+
+  // Configurar listeners de socket per a actualitzacions
+  setupSocketListeners()
+})
+
+function setupSocketListeners() {
+  socket.on('seats-updated', (data) => {
+    console.log('Actualització de seients detectada:', data)
+    // Validem que sigui de la sessió actual
+    if (data.session_id) {
+      recarregarSessions()
+    }
+  })
+
+  socket.on('seats-released', (data) => {
+    console.log('Seients alliberats detectats:', data)
+    // Validem que sigui de la sessió actual
+    if (data.session_id) {
+      recarregarSessions()
+    }
+  })
+}
+
+
+async function recarregarSessions() {
+  try {
+    sessions.value = await getSessionsByPelicula(id)
+  } catch (e) {
+    console.error('Error recarregant sessions:', e)
+  }
+}
+
+onUnmounted(() => {
+  socket.off('seats-updated')
+  socket.off('seats-released')
 })
 
 const diesDisponibles = computed(() => {

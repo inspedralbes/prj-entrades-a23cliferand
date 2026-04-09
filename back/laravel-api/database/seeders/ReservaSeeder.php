@@ -11,14 +11,14 @@ class ReservaSeeder extends Seeder
     {
         $reserves = [
             [
-                'email' => 'user1@example.com',
+                'usuari_id' => 2,
                 'sessio_id' => 1,
                 'preu_total' => 19.80,
                 'estat' => 'confirmada',
             ],
             [
-                'email' => 'user2@example.com',
-                'sessio_id' => 3,
+                'usuari_id' => 2,
+                'sessio_id' => 1,
                 'preu_total' => 29.80,
                 'estat' => 'pendent',
             ],

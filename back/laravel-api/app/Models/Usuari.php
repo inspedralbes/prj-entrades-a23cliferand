@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class Usuari extends Authenticatable
 {
-    use Notifiable;
+    use HasApiTokens, Notifiable;
 
     protected $table = 'usuaris';
 
@@ -16,6 +17,7 @@ class Usuari extends Authenticatable
         'nom',
         'email',
         'password',
+        'rol',
     ];
 
     protected $hidden = [
