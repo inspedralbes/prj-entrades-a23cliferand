@@ -35,4 +35,6 @@ return [
         ],
     ],
 
+    'imdb' => ['base_url' => env('IMDB_API_URL', 'https://api.imdbapi.dev/titles')],
+
 ];
