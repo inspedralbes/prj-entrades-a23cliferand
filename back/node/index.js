@@ -16,9 +16,20 @@ const LARAVEL_API_URL = process.env.LARAVEL_API_URL;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "https://cinema.winewithcola.com",
+      ];
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por CORS"));
+      }
+    },
     methods: ["GET", "POST"],
-    transports: ["websocket", "polling"],
+    credentials: true,
   },
   transports: ["websocket", "polling"],
 });
