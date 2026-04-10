@@ -1,10 +1,5 @@
 <template>
   <aside class="admin-sidebar">
-    <div class="sidebar-header">
-      <NuxtLink to="/admin" class="sidebar-logo">
-        <span class="sidebar-logo-text">Admin</span>
-      </NuxtLink>
-    </div>
     <nav class="sidebar-nav">
       <NuxtLink v-for="item in navItems" :key="item.path" :to="item.path" class="sidebar-link"
         :class="{ 'sidebar-link--active': isActive(item.path) }">
@@ -16,16 +11,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const navItems = [
-  { path: '/admin', label: 'Dashboard', icon: 'X' },
-  { path: '/admin/pelicules', label: 'Pel·lícules', icon: 'X' },
-  { path: '/admin/sessions', label: 'Sessions', icon: 'X' },
-  { path: '/admin/sales', label: 'Sales', icon: 'X' },
-  { path: '/admin/reserves', label: 'Reserves', icon: 'X' },
+  { path: '/admin', label: 'Dashboard', icon: '🏠' },
+  { path: '/admin/pelicules', label: 'Pel·lícules', icon: '🎬' },
+  { path: '/admin/sessions', label: 'Sessions', icon: '🕒' },
+  { path: '/admin/sales', label: 'Sales', icon: '💳' },
+  { path: '/admin/reserves', label: 'Reserves', icon: '📦' },
+  { path: '/admin/usuaris', label: 'Usuaris', icon: '👥' }
 ]
 
 const isActive = (path) => {
@@ -38,21 +33,15 @@ const isActive = (path) => {
 
 <style scoped>
 .admin-sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 240px;
-  height: 100vh;
+  position: sticky;
+  top: var(--main-navbar-height, 64px);
+  width: 100%;
+  height: calc(100vh - var(--main-navbar-height, 64px));
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  z-index: 100;
-}
-
-.sidebar-header {
-  padding: 20px;
-  border-bottom: 1px solid var(--color-border);
+  z-index: 10;
 }
 
 .sidebar-logo {
@@ -62,24 +51,24 @@ const isActive = (path) => {
 
 .sidebar-logo-text {
   font-family: var(--font-title);
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 2px;
   color: var(--color-accent);
 }
 
 .sidebar-nav {
-  padding: 16px 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  overflow: auto;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: var(--radius-md);
   text-decoration: none;
   color: var(--color-muted);
@@ -92,12 +81,12 @@ const isActive = (path) => {
 }
 
 .sidebar-link--active {
-  background: rgba(232, 39, 46, 0.1);
+  background: rgba(232, 39, 46, 0.08);
   color: var(--color-accent);
 }
 
 .sidebar-link-icon {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .sidebar-link-text {
@@ -107,12 +96,12 @@ const isActive = (path) => {
 
 @media (max-width: 768px) {
   .admin-sidebar {
-    transform: translateX(-100%);
-    transition: transform var(--transition);
-  }
-
-  .admin-sidebar.open {
-    transform: translateX(0);
+    position: static;
+    top: auto;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
   }
 }
 </style>

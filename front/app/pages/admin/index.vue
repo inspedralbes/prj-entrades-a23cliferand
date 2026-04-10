@@ -1,49 +1,51 @@
 <template>
-  <AdminSidebar />
-  <div class="admin-dashboard">
-    <h1 class="dashboard-title">Dashboard</h1>
+  <div class="admin-page">
+    <AdminSidebar />
+    <div class="admin-dashboard">
+      <h1 class="dashboard-title">Dashboard</h1>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value">{{ stats.sales }}</div>
-        <div class="stat-label">Reserves d'avui</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ stats.sessions }}</div>
-        <div class="stat-label">Sessions d'avui</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ stats.pelicules }}</div>
-        <div class="stat-label">Pel·lícules</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ stats.reserves }}</div>
-        <div class="stat-label">Reserves</div>
-      </div>
-    </div>
-
-    <div class="charts-grid" v-if="hasData">
-      <div class="chart-card">
-        <h3 class="chart-title">Entrades per dia (últims 7 dies)</h3>
-        <div class="chart-container">
-          <Bar :data="barChartData" :options="chartOptions" />
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.sales }}</div>
+          <div class="stat-label">Reserves d'avui</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.sessions }}</div>
+          <div class="stat-label">Sessions d'avui</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.pelicules }}</div>
+          <div class="stat-label">Pel·lícules</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.reserves }}</div>
+          <div class="stat-label">Reserves</div>
         </div>
       </div>
-      <div class="chart-card">
-        <h3 class="chart-title">Reserves per estat</h3>
-        <div class="chart-container">
-          <Doughnut :data="doughnutChartData" :options="chartOptions" />
+
+      <div class="charts-grid" v-if="hasData">
+        <div class="chart-card">
+          <h3 class="chart-title">Entrades per dia (últims 7 dies)</h3>
+          <div class="chart-container">
+            <Bar :data="barChartData" :options="chartOptions" />
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">Reserves per estat</h3>
+          <div class="chart-container">
+            <Doughnut :data="doughnutChartData" :options="chartOptions" />
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="no-data" v-else-if="!loading && !hasData">
-      <p class="no-data-text">No hi ha dades disponibles</p>
-    </div>
+      <div class="no-data" v-else-if="!loading && !hasData">
+        <p class="no-data-text">No hi ha dades disponibles</p>
+      </div>
 
-    <div class="loading" v-if="loading">
-      <LoadingSpinner />
-      <p>Carregant...</p>
+      <div class="loading" v-if="loading">
+        <LoadingSpinner />
+        <p>Carregant...</p>
+      </div>
     </div>
   </div>
 </template>
@@ -67,7 +69,6 @@ import {
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement)
 
 definePageMeta({
-  layout: 'admin',
   middleware: 'admin'
 })
 
@@ -164,8 +165,16 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.admin-page {
+  display: grid;
+  grid-template-columns: var(--admin-sidebar-width, 240px) minmax(0, 1fr);
+  align-items: start;
+  min-height: calc(100vh - var(--main-navbar-height, 64px));
+}
+
 .admin-dashboard {
   padding: 20px;
+  min-width: 0;
 }
 
 .dashboard-title {
@@ -246,6 +255,10 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .admin-page {
+    grid-template-columns: 1fr;
+  }
+
   .charts-grid {
     grid-template-columns: 1fr;
   }
