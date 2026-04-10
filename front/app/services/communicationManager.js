@@ -332,3 +332,8 @@ export function updateTarifa(id, data) {
 export function deleteTarifa(id) {
   return request(`/tarifes/${id}`, { method: "DELETE" });
 }
+
+// Admin
+export function getAdminStats() {
+  return request("/admin/stats");
+}

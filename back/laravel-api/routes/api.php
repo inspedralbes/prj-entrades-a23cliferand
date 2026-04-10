@@ -9,6 +9,7 @@ use App\Http\Controllers\SessioController;
 use App\Http\Controllers\SalaController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminController;
 
 
 // Aquí pots definir els teus endpoints API.
@@ -79,4 +80,7 @@ Route::post('/reserves/seient_desocupar', [ReservaController::class, 'desocuparS
 Route::post('/reserves/confirmar', [ReservaController::class, 'confirmarCompraFinal']);
 Route::post('/reserves/transferir-guest', [ReservaController::class, 'transferirReservesGuest'])->middleware('auth:sanctum');
 Route::post('/reserves/expirar', [ReservaController::class, 'expirarReservesTemporals']);
+
+// Admin
+Route::get('/admin/stats', [AdminController::class, 'stats']);
 

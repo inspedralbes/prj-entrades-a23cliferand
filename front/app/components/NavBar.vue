@@ -9,6 +9,9 @@
             <!-- Actions -->
             <div class="navbar_actions">
                 <template v-if="!isInAuthPage">
+                    <template v-if="guestStore.isAdmin() && !route.path.startsWith('/admin')">
+                        <NuxtLink to="/admin" class="btn btn-admin">Panell d'Administració</NuxtLink>
+                    </template>
                     <template v-if="guestStore.isAuthenticated()">
                         <div class="navbar_user-info">
                             <span class="navbar_greeting">Hola, {{ guestStore.nom }}</span>
@@ -132,6 +135,23 @@ guestStore.loadAuthData()
     font-size: 0.9rem;
     font-weight: 500;
     transition: color var(--transition), background var(--transition);
+}
+
+.btn-admin {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color var(--transition), background var(--transition);
+}
+
+.btn-admin:hover {
+    background: var(--color-surface2);
+    color: var(--color-text);
+    border-color: var(--color-border);
 }
 
 @media (max-width: 640px) {
