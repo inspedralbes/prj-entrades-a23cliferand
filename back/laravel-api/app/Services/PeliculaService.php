@@ -86,6 +86,27 @@ class PeliculaService
         return $this->fetchFromApi($imdbId);
     }
 
+    public function deleteMovie(string $imdbId): bool
+    {
+        $key = "pelicula:{$imdbId}";
+        return Redis::del($key) > 0;
+    }
+
+    public function updateMovie(string $imdbId, array $data): bool
+    {
+        $key = "pelicula:{$imdbId}";
+        
+        if (!Redis::exists($key)) {
+            return false;
+        }
+
+        foreach ($data as $field => $value) {
+            Redis::hset($key, $field, (string) $value);
+        }
+
+        return true;
+    }
+
     public function fetchFromApi(string $imdbId): ?array
     {
         $baseUrl = rtrim((string) config('services.imdb.base_url'), '/');

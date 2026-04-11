@@ -79,15 +79,16 @@ const handleLogin = async () => {
         // Verificar si la resposta conté el token
         if (response.token) {
             // Guardem les dades a la base de dades local i al store
-            let userId, nom, email;
+            let userId, nom, email, rol;
 
             if (response.user) {
                 userId = response.user.id;
                 nom = response.user.nom;
                 email = response.user.email;
+                rol = response.user.rol;
             }
 
-            guestStore.setAuthData(userId, nom, response.token, email);
+            guestStore.setAuthData(userId, nom, response.token, email, rol);
 
             // Transferim les reserves del guest al nou usuari autenticat
             if (guestIdAbansLogin) {

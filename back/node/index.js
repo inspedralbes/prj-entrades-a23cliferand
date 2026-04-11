@@ -109,7 +109,6 @@ async function expirarReservesTemporals() {
     });
 
     const data = await response.json();
-    console.log("Sexo:", data.session_ids);
 
     // Emit del resultat que torna Laravel
     io.emit("seat-refresh", {

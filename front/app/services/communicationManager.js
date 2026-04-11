@@ -123,6 +123,8 @@ export function normalizePelicula(raw) {
 export function normalizeSessio(raw) {
   const dataHora = raw.data_hora ? new Date(raw.data_hora) : null;
   const salaObj = raw.sala ?? {};
+  const tarifaObj = raw.tarifa ?? {};
+  const pelliculaObj = raw.pelicula ?? {};
   const occupancy = raw.occupancy ?? {};
 
   let esPassat = false;
@@ -134,7 +136,7 @@ export function normalizeSessio(raw) {
 
   return {
     id: raw.id,
-    peliculaId: raw.pellicula_id ?? raw.pellicula?.imdb_id ?? "",
+    peliculaId: pelliculaObj.imdb_id ?? raw.pellicula_id ?? "",
     salaId: raw.sala_id,
     tarifaId: raw.tarifa_id,
     dataHora,
@@ -150,6 +152,7 @@ export function normalizeSessio(raw) {
     numDia: dataHora ? dataHora.getDate() : "—",
     mesSessio: dataHora ? NOMS_MES[dataHora.getMonth()] : "—",
     sala: salaObj.nom ?? `Sala ${raw.sala_id}`,
+    tarifa: tarifaObj.nom ?? `Tarifa ${raw.tarifa_id}`,
     capacitat: salaObj.capacitat ?? 0,
     placesLliures: occupancy.seients_lliures ?? null,
     seientReservats: occupancy.seients_reservats ?? 0,
@@ -181,6 +184,19 @@ export function syncPeliculesAll() {
 // Sincronitza una pel·lícula concreta per IMDB ID
 export function syncPeliculaSingle(imdbId) {
   return request(`/pelicules/sync/${imdbId}`, { method: "POST" });
+}
+
+// Actualitza una pel·lícula a Redis per IMDB ID
+export function updatePelicula(imdbId, data) {
+  return request(`/pelicules/${imdbId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+// Elimina una pel·lícula de Redis per IMDB ID
+export function deletePelicula(imdbId) {
+  return request(`/pelicules/${imdbId}`, { method: "DELETE" });
 }
 
 // Sessions
@@ -320,6 +336,9 @@ export function getTarifesAll() {
 export function getTarifaById(id) {
   return request(`/tarifes/${id}`);
 }
+export function getTipusClientAll() {
+  return request("/tarifes/tipus-client");
+}
 export function createTarifa(data) {
   return request("/tarifes", { method: "POST", body: JSON.stringify(data) });
 }
@@ -331,4 +350,9 @@ export function updateTarifa(id, data) {
 }
 export function deleteTarifa(id) {
   return request(`/tarifes/${id}`, { method: "DELETE" });
+}
+
+// Admin
+export function getAdminStats() {
+  return request("/admin/stats");
 }
