@@ -26,22 +26,22 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 // Pelicules sync (fusionado en PeliculaController)
-Route::post('/pelicules/sync/all', [PeliculaController::class, 'syncAll'])->middleware('auth:sanctum');
-Route::post('/pelicules/sync/{imdbId}', [PeliculaController::class, 'syncSingle'])->middleware('auth:sanctum');
+Route::post('/pelicules/sync/all', [PeliculaController::class, 'syncAll'])->middleware('auth:sanctum', 'admin');
+Route::post('/pelicules/sync/{imdbId}', [PeliculaController::class, 'syncSingle'])->middleware('auth:sanctum', 'admin');
 
 // CRUD Routes - USUARIS
 Route::get('/usuaris', [UsuariController::class, 'index']);
 Route::get('/usuaris/{id}', [UsuariController::class, 'show']);
-Route::post('/usuaris', [UsuariController::class, 'store'])->middleware('auth:sanctum');
-Route::put('/usuaris/{id}', [UsuariController::class, 'update'])->middleware('auth:sanctum');
-Route::delete('/usuaris/{id}', [UsuariController::class, 'destroy'])->middleware('auth:sanctum');
+Route::post('/usuaris', [UsuariController::class, 'store'])->middleware('auth:sanctum', 'admin');
+Route::put('/usuaris/{id}', [UsuariController::class, 'update'])->middleware('auth:sanctum', 'admin');
+Route::delete('/usuaris/{id}', [UsuariController::class, 'destroy'])->middleware('auth:sanctum', 'admin');
 
 // CRUD Routes - PELICULES
 Route::get('/pelicules', [PeliculaController::class, 'index']);
 Route::get('/pelicules/{id}', [PeliculaController::class, 'show']);
-Route::post('/pelicules', [PeliculaController::class, 'store'])->middleware('auth:sanctum');
-Route::put('/pelicules/{id}', [PeliculaController::class, 'update'])->middleware('auth:sanctum');
-Route::delete('/pelicules/{id}', [PeliculaController::class, 'destroy'])->middleware('auth:sanctum');
+Route::post('/pelicules', [PeliculaController::class, 'store'])->middleware('auth:sanctum', 'admin');
+Route::put('/pelicules/{id}', [PeliculaController::class, 'update'])->middleware('auth:sanctum', 'admin');
+Route::delete('/pelicules/{id}', [PeliculaController::class, 'destroy'])->middleware('auth:sanctum', 'admin');
 
 // CRUD Routes - RESERVES (sin auth para permitir guests)
 Route::get('/reserves', [ReservaController::class, 'index']);
@@ -54,24 +54,24 @@ Route::delete('/reserves/{id}', [ReservaController::class, 'destroy']);
 Route::get('/sessions', [SessioController::class, 'index']);
 Route::get('/sessions/{id}', [SessioController::class, 'show']);
 Route::get('/sessions/pelicula/{peliculaId}', [SessioController::class, 'getByPelicula']);
-Route::post('/sessions', [SessioController::class, 'store'])->middleware('auth:sanctum');
-Route::put('/sessions/{id}', [SessioController::class, 'update'])->middleware('auth:sanctum');
-Route::delete('/sessions/{id}', [SessioController::class, 'destroy'])->middleware('auth:sanctum');
+Route::post('/sessions', [SessioController::class, 'store'])->middleware('auth:sanctum', 'admin');
+Route::put('/sessions/{id}', [SessioController::class, 'update'])->middleware('auth:sanctum', 'admin');
+Route::delete('/sessions/{id}', [SessioController::class, 'destroy'])->middleware('auth:sanctum', 'admin');
 
 // CRUD Routes - SALES
 Route::get('/sales', [SalaController::class, 'index']);
 Route::get('/sales/{id}', [SalaController::class, 'show']);
-Route::post('/sales', [SalaController::class, 'store'])->middleware('auth:sanctum');
-Route::put('/sales/{id}', [SalaController::class, 'update'])->middleware('auth:sanctum');
-Route::delete('/sales/{id}', [SalaController::class, 'destroy'])->middleware('auth:sanctum');
+Route::post('/sales', [SalaController::class, 'store'])->middleware('auth:sanctum', 'admin');
+Route::put('/sales/{id}', [SalaController::class, 'update'])->middleware('auth:sanctum', 'admin');
+Route::delete('/sales/{id}', [SalaController::class, 'destroy'])->middleware('auth:sanctum', 'admin');
 
 // CRUD Routes - TARIFES
 Route::get('/tarifes', [TarifaController::class, 'index']);
 Route::get('/tarifes/tipus-client', [TarifaController::class, 'getTipusClient']);
 Route::get('/tarifes/{id}', [TarifaController::class, 'show']);
-Route::post('/tarifes', [TarifaController::class, 'store'])->middleware('auth:sanctum');
-Route::put('/tarifes/{id}', [TarifaController::class, 'update'])->middleware('auth:sanctum');
-Route::delete('/tarifes/{id}', [TarifaController::class, 'destroy'])->middleware('auth:sanctum');
+Route::post('/tarifes', [TarifaController::class, 'store'])->middleware('auth:sanctum', 'admin');
+Route::put('/tarifes/{id}', [TarifaController::class, 'update'])->middleware('auth:sanctum', 'admin');
+Route::delete('/tarifes/{id}', [TarifaController::class, 'destroy'])->middleware('auth:sanctum', 'admin');
 
 // Reserves
 Route::get('/sessions/{sessioId}/seients', [ReservaController::class, 'getSeientsSessio']);
@@ -82,6 +82,9 @@ Route::post('/reserves/confirmar', [ReservaController::class, 'confirmarCompraFi
 Route::post('/reserves/transferir-guest', [ReservaController::class, 'transferirReservesGuest'])->middleware('auth:sanctum');
 Route::post('/reserves/expirar', [ReservaController::class, 'expirarReservesTemporals']);
 
+// Entrades
+Route::get('/entrades/les-meves', [ReservaController::class, 'lesMevesEntrades'])->middleware('auth:sanctum');
+
 // Admin
-Route::get('/admin/stats', [AdminController::class, 'stats'])->middleware('auth:sanctum');
+Route::get('/admin/stats', [AdminController::class, 'stats'])->middleware('auth:sanctum', 'admin');
 

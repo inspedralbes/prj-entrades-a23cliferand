@@ -9,6 +9,9 @@
             <!-- Actions -->
             <div class="navbar_actions">
                 <template v-if="!isInAuthPage">
+                    <template v-if="guestStore.isAuthenticated() && !route.path.startsWith('/LesMevesEntrades')">
+                        <NuxtLink to="/LesMevesEntrades" class="btn btn-admin">Les meves entrades</NuxtLink>
+                    </template>
                     <template v-if="guestStore.isAdmin() && !route.path.startsWith('/admin')">
                         <NuxtLink to="/admin" class="btn btn-admin">Panell d'Administració</NuxtLink>
                     </template>

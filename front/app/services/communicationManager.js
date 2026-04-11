@@ -1,4 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL_NO_API = import.meta.env.VITE_URL_NO_API;
 
 const NOMS_DIA = ["Dg", "Dl", "Dm", "Dc", "Dj", "Dv", "Ds"];
 const NOMS_MES = [
@@ -255,9 +256,6 @@ export function deleteSala(id) {
 export function getReservesAll() {
   return request("/reserves");
 }
-export function getReservesMeves() {
-  return request("/reserves?meves=1");
-}
 export function getReservaById(id) {
   return request(`/reserves/${id}`);
 }
@@ -272,6 +270,18 @@ export function confirmarReservaFinal(data) {
 }
 export function deleteReserva(id) {
   return request(`/reserves/${id}`, { method: "DELETE" });
+}
+
+// Entrades
+export function getLesMevesEntrades() {
+  return request("/entrades/les-meves");
+}
+
+export function descarregarEntrada(id) {
+  // Funció en proces, per ara retorna un pdf default
+  const url = `${BASE_URL_NO_API}/storage/entrades/entrada_default.pdf`;
+  globalThis.location.href = url;
+  return url;
 }
 
 // Obté els seients disponibles per a una sessió

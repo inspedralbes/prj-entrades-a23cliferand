@@ -143,9 +143,16 @@ import {
   getSalesAll,
   getTarifesAll
 } from '~/services/communicationManager'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 definePageMeta({
   middleware: 'admin'
+})
+
+const { appName } = useAppConstants()
+
+useHead({
+  title: `Sessions — ${appName}`,
 })
 
 const sessions = ref([])

@@ -81,7 +81,6 @@ import { useAppConstants } from '~/composables/useAppConstants'
 
 const route = useRoute()
 const id = route.params.id
-const { appName } = useAppConstants()
 
 const pelicula = ref(null)
 const sessions = ref([])
@@ -89,9 +88,10 @@ const carregant = ref(true)
 const carregantSessions = ref(true)
 const errorSessions = ref(null)
 
+const { appName } = useAppConstants()
+
 useHead({
   title: computed(() => pelicula.value ? `${pelicula.value.titol} — ${appName}` : appName),
-
 })
 
 onMounted(async () => {

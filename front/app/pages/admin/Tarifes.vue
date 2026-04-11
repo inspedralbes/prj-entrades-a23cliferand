@@ -79,9 +79,16 @@ import {
   updateTarifa,
   deleteTarifa
 } from '~/services/communicationManager'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 definePageMeta({
   middleware: 'admin'
+})
+
+const { appName } = useAppConstants()
+
+useHead({
+  title: `Tarifes — ${appName}`,
 })
 
 const tarifes = ref([])

@@ -146,6 +146,7 @@ import {
   updatePelicula,
   deletePelicula
 } from '~/services/communicationManager'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 definePageMeta({
   middleware: 'admin'
@@ -171,6 +172,11 @@ const itemToDelete = ref(null)
 const deleting = ref(false)
 const updating = ref(false)
 const syncingId = ref(null)
+const { appName } = useAppConstants()
+
+useHead({
+  title: `Pel·lícules — ${appName}`,
+})
 
 const columns = [
   { key: 'imdb_id', label: 'IMDb ID', width: '120px' },

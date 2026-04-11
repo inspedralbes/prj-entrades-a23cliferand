@@ -55,6 +55,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Bar, Doughnut } from 'vue-chartjs'
 import LoadingSpinner from '~/components/LoadingSpinner.vue'
 import { getAdminStats } from '~/services/communicationManager'
+import { useAppConstants } from '~/composables/useAppConstants'
 import {
   Chart as ChartJS,
   Title,
@@ -83,6 +84,11 @@ const dailyReserves = ref([])
 const reservesByState = ref({ pendent: 0, confirmada: 0, caducada: 0 })
 const loading = ref(true)
 const error = ref(null)
+const { appName } = useAppConstants()
+
+useHead({
+  title: `Admin — ${appName}`,
+})
 
 const hasData = computed(() => {
   return stats.value.sales > 0 ||

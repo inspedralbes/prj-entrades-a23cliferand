@@ -69,6 +69,7 @@ jobs:
             echo "Configurant fitxer .env de frontend..."
             cd ./front
             echo "VITE_API_URL=https://cinema.winewithcola.com/back/api" > .env
+            echo "VITE_URL_NO_API=https://cinema.winewithcola.com/back" >> .env
             echo "VITE_SOCKET_URL=https://cinema.winewithcola.com" >> .env
             cd ..
 

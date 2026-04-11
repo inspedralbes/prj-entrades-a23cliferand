@@ -50,15 +50,14 @@ import { ref, computed, onMounted } from 'vue'
 import { getPeliculesAll } from '~/services/communicationManager'
 import { useAppConstants } from '~/composables/useAppConstants'
 
+const pelicules = ref([])
+const carregant = ref(true)
+const error = ref(null)
 const { appName } = useAppConstants()
 
 useHead({
   title: `${appName} — Cartellera`,
 })
-
-const pelicules = ref([])
-const carregant = ref(true)
-const error = ref(null)
 
 onMounted(async () => {
   try {
