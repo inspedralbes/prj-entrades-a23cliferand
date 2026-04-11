@@ -3,7 +3,6 @@
     <nav class="sidebar-nav">
       <NuxtLink v-for="item in navItems" :key="item.path" :to="item.path" class="sidebar-link"
         :class="{ 'sidebar-link--active': isActive(item.path) }">
-        <span class="sidebar-link-icon">{{ item.icon }}</span>
         <span class="sidebar-link-text">{{ item.label }}</span>
       </NuxtLink>
     </nav>
@@ -15,12 +14,13 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const navItems = [
-  { path: '/admin', label: 'Dashboard', icon: '🏠' },
-  { path: '/admin/pelicules', label: 'Pel·lícules', icon: '🎬' },
-  { path: '/admin/sessions', label: 'Sessions', icon: '🕒' },
-  { path: '/admin/sales', label: 'Sales', icon: '💳' },
-  { path: '/admin/reserves', label: 'Reserves', icon: '📦' },
-  { path: '/admin/usuaris', label: 'Usuaris', icon: '👥' }
+  { path: '/admin', label: 'Dashboard' },
+  { path: '/admin/Pelicules', label: 'Pel·lícules' },
+  { path: '/admin/Sessions', label: 'Sessions' },
+  { path: '/admin/Tarifes', label: 'Tarifes' },
+  { path: '/admin/Sales', label: 'Sales' },
+  { path: '/admin/Reserves', label: 'Reserves' },
+  { path: '/admin/Usuaris', label: 'Usuaris' }
 ]
 
 const isActive = (path) => {

@@ -165,13 +165,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-page {
-  display: grid;
-  grid-template-columns: var(--admin-sidebar-width, 240px) minmax(0, 1fr);
-  align-items: start;
-  min-height: calc(100vh - var(--main-navbar-height, 64px));
-}
-
 .admin-dashboard {
   padding: 20px;
   min-width: 0;
@@ -252,15 +245,5 @@ onMounted(() => {
   text-align: center;
   padding: 40px;
   color: var(--color-muted);
-}
-
-@media (max-width: 768px) {
-  .admin-page {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

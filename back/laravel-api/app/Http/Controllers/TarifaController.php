@@ -3,16 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tarifa;
+use App\Models\TipusClient;
+use App\Models\PreuTarifa;
 use Illuminate\Http\Request;
 
 class TarifaController extends Controller
 {
     /**
-     * Mostra una llista de totes les tarifes.
+     * Obté tots els tipus de client.
+     */
+    public function getTipusClient()
+    {
+        return response()->json(TipusClient::all(), 200);
+    }
+
+    /**
+     * Mostra una llista de totes les tarifes amb els seus preus.
      */
     public function index()
     {
-        return response()->json(Tarifa::all(), 200);
+        $tarifes = Tarifa::with('preus.tarifa', 'preus.tipusClient')->get();
+        return response()->json($tarifes, 200);
     }
 
     /**
@@ -23,12 +34,26 @@ class TarifaController extends Controller
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'descripcio' => 'nullable|string',
-            'activa' => 'boolean',
+            'preus' => 'required|array',
+            'preus.*.tipus_client_id' => 'required|integer|exists:tipus_client,id',
+            'preus.*.preu' => 'required|numeric|min:0',
         ]);
 
         try {
-            $tarifa = Tarifa::create($validated);
-            return response()->json($tarifa, 201);
+            $tarifa = Tarifa::create([
+                'nom' => $validated['nom'],
+                'descripcio' => $validated['descripcio'] ?? null,
+            ]);
+
+            foreach ($validated['preus'] as $preu) {
+                PreuTarifa::create([
+                    'tarifa_id' => $tarifa->id,
+                    'tipus_client_id' => $preu['tipus_client_id'],
+                    'preu' => $preu['preu'],
+                ]);
+            }
+
+            return response()->json($tarifa->fresh('preus'), 201);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -62,12 +87,30 @@ class TarifaController extends Controller
         $validated = $request->validate([
             'nom' => 'sometimes|string|max:255',
             'descripcio' => 'sometimes|string|nullable',
-            'activa' => 'sometimes|boolean',
+            'preus' => 'sometimes|array',
+            'preus.*.tipus_client_id' => 'required_with:preus|integer|exists:tipus_client,id',
+            'preus.*.preu' => 'required_with:preus|numeric|min:0',
         ]);
 
         try {
-            $tarifa->update($validated);
-            return response()->json($tarifa, 200);
+            $tarifa->update([
+                'nom' => $validated['nom'] ?? $tarifa->nom,
+                'descripcio' => $validated['descripcio'] ?? $tarifa->descripcio,
+            ]);
+
+            if (isset($validated['preus'])) {
+                PreuTarifa::where('tarifa_id', $tarifa->id)->delete();
+                
+                foreach ($validated['preus'] as $preu) {
+                    PreuTarifa::create([
+                        'tarifa_id' => $tarifa->id,
+                        'tipus_client_id' => $preu['tipus_client_id'],
+                        'preu' => $preu['preu'],
+                    ]);
+                }
+            }
+
+            return response()->json($tarifa->fresh('preus'), 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -84,6 +127,7 @@ class TarifaController extends Controller
             return response()->json(['error' => 'Tarifa no trobada'], 404);
         }
 
+        PreuTarifa::where('tarifa_id', $tarifa->id)->delete();
         $tarifa->delete();
         return response()->json(['message' => 'Tarifa eliminada correctament'], 200);
     }

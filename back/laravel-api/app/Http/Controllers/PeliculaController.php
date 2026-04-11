@@ -48,19 +48,42 @@ class PeliculaController extends Controller
     }
 
     /**
-     * Actualitza la pel·lícula especificada a la base de dades.
+     * Actualitza la pel·lícula especificada a Redis.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, string $imdbId): JsonResponse
     {
-        return response()->json(['error' => 'No es permeten actualitzacions de pel·lícules'], 400);
+        $data = $request->validate([
+            'titol' => 'sometimes',
+            'titol_original' => 'sometimes',
+            'any' => 'sometimes',
+            'duracio' => 'sometimes',
+            'rating' => 'sometimes',
+            'generes' => 'sometimes',
+            'sinopsi' => 'sometimes',
+            'cartell' => 'sometimes',
+        ]);
+
+        $success = $this->peliculaService->updateMovie($imdbId, $data);
+
+        if (!$success) {
+            return response()->json(['error' => 'Pel·lícula no trobada a Redis'], 404);
+        }
+
+        return response()->json(['message' => "Pel·lícula {$imdbId} actualitzada correctament"]);
     }
 
     /**
-     * Elimina la pel·lícula especificada de la base de dades.
+     * Elimina la pel·lícula especificada de Redis.
      */
-    public function destroy($id)
+    public function destroy(string $imdbId): JsonResponse
     {
-        return response()->json(['error' => 'No es permeten eliminar pel·lícules'], 400);
+        $success = $this->peliculaService->deleteMovie($imdbId);
+
+        if (!$success) {
+            return response()->json(['error' => 'Pel·lícula no trobada a Redis'], 404);
+        }
+
+        return response()->json(['message' => "Pel·lícula {$imdbId} eliminada de Redis"]);
     }
 
     /**

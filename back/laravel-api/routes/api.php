@@ -26,8 +26,8 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 // Pelicules sync (fusionado en PeliculaController)
-Route::post('/pelicules/sync/all', [PeliculaController::class, 'syncAll']);
-Route::post('/pelicules/sync/{imdbId}', [PeliculaController::class, 'syncSingle']);
+Route::post('/pelicules/sync/all', [PeliculaController::class, 'syncAll'])->middleware('auth:sanctum');
+Route::post('/pelicules/sync/{imdbId}', [PeliculaController::class, 'syncSingle'])->middleware('auth:sanctum');
 
 // CRUD Routes - USUARIS
 Route::get('/usuaris', [UsuariController::class, 'index']);
@@ -67,6 +67,7 @@ Route::delete('/sales/{id}', [SalaController::class, 'destroy'])->middleware('au
 
 // CRUD Routes - TARIFES
 Route::get('/tarifes', [TarifaController::class, 'index']);
+Route::get('/tarifes/tipus-client', [TarifaController::class, 'getTipusClient']);
 Route::get('/tarifes/{id}', [TarifaController::class, 'show']);
 Route::post('/tarifes', [TarifaController::class, 'store'])->middleware('auth:sanctum');
 Route::put('/tarifes/{id}', [TarifaController::class, 'update'])->middleware('auth:sanctum');
@@ -82,5 +83,5 @@ Route::post('/reserves/transferir-guest', [ReservaController::class, 'transferir
 Route::post('/reserves/expirar', [ReservaController::class, 'expirarReservesTemporals']);
 
 // Admin
-Route::get('/admin/stats', [AdminController::class, 'stats']);
+Route::get('/admin/stats', [AdminController::class, 'stats'])->middleware('auth:sanctum');
 

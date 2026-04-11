@@ -11,7 +11,7 @@ class SalaSeeder extends Seeder
     public function run(): void
     {
         $sales = [
-            ['nom' => 'Sala 1', 'capacitat' => 80, 'files_max' => 8, 'columnes_max' => 10],
+            ['nom' => 'Sala 1', 'capacitat' => 96, 'files_max' => 8, 'columnes_max' => 12],
             ['nom' => 'Sala 2', 'capacitat' => 96, 'files_max' => 8, 'columnes_max' => 12],
             ['nom' => 'Sala 3 - 3D', 'capacitat' => 120, 'files_max' => 10, 'columnes_max' => 12],
             ['nom' => 'Sala 4 - IMAX', 'capacitat' => 200, 'files_max' => 15, 'columnes_max' => 14],
@@ -36,7 +36,7 @@ class SalaSeeder extends Seeder
 
             for ($col = 1; $col <= $columnesMax; $col++) {
                 $esSeient = $this->esSeient($fila, $col, $filesMax, $columnesMax, $sala->nom);
-                
+
                 if ($esSeient) {
                     $numSeient++;
                 }
@@ -64,6 +64,10 @@ class SalaSeeder extends Seeder
                 return true;
             }
             return $col >= 3 && $col <= $columnesMax - 2;
+        }
+
+        if (str_contains($nomSala, 'Sala 1')) {
+            return true;
         }
 
         if ($col == 1 || $col == $columnesMax) {

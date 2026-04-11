@@ -12,6 +12,9 @@
                     <template v-if="guestStore.isAdmin() && !route.path.startsWith('/admin')">
                         <NuxtLink to="/admin" class="btn btn-admin">Panell d'Administració</NuxtLink>
                     </template>
+                    <template v-else-if="guestStore.isAdmin() && route.path.startsWith('/admin')">
+                        <NuxtLink to="/" class="btn btn-admin">Sortir del panell</NuxtLink>
+                    </template>
                     <template v-if="guestStore.isAuthenticated()">
                         <div class="navbar_user-info">
                             <span class="navbar_greeting">Hola, {{ guestStore.nom }}</span>

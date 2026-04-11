@@ -22,6 +22,10 @@ The sidebar SHALL provide clickable navigation links that route to the respectiv
 - **WHEN** admin clicks on "Reserves" in the sidebar
 - **THEN** the system navigates to `/admin/reserves`
 
+#### Scenario: Admin clicks Usuaris link
+- **WHEN** admin clicks on "Usuaris" in the sidebar
+- **THEN** the system navigates to `/admin/usuaris`
+
 ### Requirement: Dashboard link in sidebar
 The sidebar SHALL include a link back to the main dashboard.
 
