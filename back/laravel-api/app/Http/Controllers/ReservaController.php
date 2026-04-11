@@ -349,4 +349,72 @@ class ReservaController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    /**
+     * Obté totes les entrades de l'usuari autenticat
+     */
+    public function lesMevesEntrades(Request $request)
+    {
+        $usuari = $request->user();
+
+        $entrades = Reserva::where('usuari_id', $usuari->id)
+            ->with(['seientsSessio', 'sessio.sala'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $entrades = $entrades->map(function ($reserva) {
+            $response = [
+                'id' => $reserva->id,
+                'usuari_id' => $reserva->usuari_id,
+                'guest_id' => $reserva->guest_id,
+                'email' => $reserva->email,
+                'sessio_id' => $reserva->sessio_id,
+                'preu_total' => $reserva->preu_total,
+                'estat' => $reserva->estat,
+                'created_at' => $reserva->created_at,
+                'updated_at' => $reserva->updated_at,
+            ];
+
+            $response['seientsSessio'] = $reserva->seientsSessio->map(function ($seient) {
+                return [
+                    'id' => $seient->id,
+                    'fila' => $seient->fila,
+                    'numero' => $seient->numero,
+                    'pivot' => $seient->pivot,
+                ];
+            });
+
+            if ($reserva->sessio) {
+                $response['sessio'] = [
+                    'id' => $reserva->sessio->id,
+                    'data_hora' => $reserva->sessio->data_hora,
+                    'sala' => [
+                        'id' => $reserva->sessio->sala_id,
+                        'nom' => $reserva->sessio->sala->nom ?? null,
+                    ],
+                    'pellicula_id' => $reserva->sessio->pellicula_id,
+                ];
+
+                try {
+                    $peliculaService = app('App\Services\PeliculaService');
+                    $pelicula = $peliculaService->getByIdFromRedis($reserva->sessio->pellicula_id);
+                    $response['pelicula'] = [
+                        'titol' => $pelicula['titol'] ?? 'Desconegut',
+                        'cartell' => $pelicula['cartell'] ?? null,
+                        'imdbId' => $reserva->sessio->pellicula_id,
+                    ];
+                } catch (\Exception $e) {
+                    $response['pelicula'] = [
+                        'titol' => 'Desconegut',
+                        'cartell' => null,
+                        'imdbId' => $reserva->sessio->pellicula_id,
+                    ];
+                }
+            }
+
+            return $response;
+        });
+
+        return response()->json($entrades, 200);
+    }
 }

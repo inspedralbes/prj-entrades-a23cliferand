@@ -72,9 +72,16 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { getSalesAll, createSala, updateSala, deleteSala } from '~/services/communicationManager'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 definePageMeta({
   middleware: 'admin'
+})
+
+const { appName } = useAppConstants()
+
+useHead({
+  title: `Sales — ${appName}`,
 })
 
 const sales = ref([])

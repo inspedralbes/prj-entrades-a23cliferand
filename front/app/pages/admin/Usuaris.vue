@@ -75,9 +75,16 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { getUsuarisAll, createUsuari, updateUsuari, deleteUsuari } from '~/services/communicationManager'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 definePageMeta({
   middleware: 'admin'
+})
+
+const { appName } = useAppConstants()
+
+useHead({
+  title: `Usuaris — ${appName}`,
 })
 
 const usuaris = ref([])

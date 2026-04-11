@@ -117,9 +117,16 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getReservesAll } from '~/services/communicationManager'
+import { useAppConstants } from '~/composables/useAppConstants'
 
 definePageMeta({
   middleware: 'admin'
+})
+
+const { appName } = useAppConstants()
+
+useHead({
+  title: `Reserves — ${appName}`,
 })
 
 const reserves = ref([])
