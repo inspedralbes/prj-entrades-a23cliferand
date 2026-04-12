@@ -3,6 +3,10 @@
 - [IA x Desenvolupar](./prompts-log.md)
 - DeepWiki: https://deepwiki.com/inspedralbes/prj-entrades-a23cliferand
 
+## Dades d'accés
+- Email: client@client.com / Password: Jupiter1
+- Email: admin@admin.com / Password: Jupiter1
+
 ### Objectius
 
 `Cinema Paradise` és una plataforma de gestió i compra d'entrades de cinema amb aquests objectius principals:
