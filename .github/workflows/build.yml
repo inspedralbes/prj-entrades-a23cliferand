@@ -1,0 +1,82 @@
+name: Deploy and Update Services - Winewithcola
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Full Deploy Process
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSHKEY }}
+          known_hosts: unnecessary
+          if_key_exists: replace
+
+      - name: Add to Known Hosts
+        run: |
+          echo "Connecting to server ${{ secrets.IP_SERVER }}..."
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.IP_SERVER }} >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Update, Configure and Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.USER_SERVER }}@${{ secrets.IP_SERVER }} bash -s << 'EOF'
+            # Acceder al directorio del proyecto
+            cd /prj-entrades-a23cliferand || exit
+
+            echo "Baixant canvis de Git..."
+            git pull origin main
+
+            echo "Configurant fitxer .env..."
+            echo "CRON_TOKEN=${{ secrets.CRON_TOKEN }}" > .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            echo "PGADMIN_DEFAULT_PASSWORD=${{ secrets.PGADMIN_DEFAULT_PASSWORD }}" >> .env
+            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
+
+            echo "Configurant fitxer .env de laravel-api..."
+            cd ./back/laravel-api
+            echo "Copiant fitxer .env.PROD a .env..."
+            cp .env.PROD .env
+            echo "CONFIG POSTGRES"
+            echo "DB_CONNECTION=pgsql" >> .env
+            echo "DB_HOST=tr3-cf-postgres" >> .env
+            echo "DB_PORT=5432" >> .env
+            echo "DB_DATABASE=tr3-postgres" >> .env
+            echo "DB_USERNAME=postgres" >> .env
+            echo "DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            echo "CONFIG REDIS"
+            echo "REDIS_CLIENT=predis" >> .env
+            echo "REDIS_HOST=tr3-cf-redis" >> .env
+            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
+            echo "REDIS_PORT=6379" >> .env
+            cd ../..
+
+            echo "Configurant fitxer .env de node..."
+            cd ./back/node
+            echo "Copiant fitxer .env.PROD a .env..."
+            cp .env.PROD .env
+            cd ../..
+
+            echo "Configurant fitxer .env de frontend..."
+            cd ./front
+            echo "VITE_API_URL=https://cinema.winewithcola.com/back/api" > .env
+            echo "VITE_URL_NO_API=https://cinema.winewithcola.com/back" >> .env
+            echo "VITE_SOCKET_URL=https://cinema.winewithcola.com" >> .env
+            cd ..
+
+            echo "Configuració completada."
+            echo "Desplegar serveis"
+            docker compose -f compose.PROD.yml up -d --build
+
+            echo "Desplegem finalitzat amb èxit!"
+
+          EOF
