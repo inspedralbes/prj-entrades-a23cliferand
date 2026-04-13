@@ -4,6 +4,7 @@
 - DeepWiki: https://deepwiki.com/inspedralbes/prj-entrades-a23cliferand
 
 ## Dades d'accés
+
 - Email: client@client.com / Password: Jupiter1
 - Email: admin@admin.com / Password: Jupiter1
 
@@ -17,6 +18,10 @@
 - Proporcionar panell d'administració per gestionar dades i estadístiques.
 
 ### Arquitectura bàsica
+
+#### Diagrama database
+
+![Diagrama de la base de dades](./diagrama-db.png)
 
 #### Tecnologies utilitzades
 
